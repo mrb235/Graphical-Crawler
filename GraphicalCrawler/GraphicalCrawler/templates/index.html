@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="jumbotron">
+    <h1>Start Crawling</h1>
+</div>
+
+<div class="row">
+    <form method="post">
+        <label for="starturl">URL:</label>
+        <input type="url" name="starturl" required/><br />
+        <label for="artist">Keywords:</label>
+        <input type="text" name="keywords" /><br />
+        <label for="1">DFS</label>
+        <input type="radio" name="DFS" value="DFS" id="1" />
+        <label for="2">BFS</label>
+        <input type="radio" name="BFS" value="BFS" id="2" selected /><br />
+        <label for="depth">Depth Limit:</label>
+        <input type="number" name="depth" /><br />
+        <button class="btn btn-primary" type="submit">Submit</button>
+    </form>
+</div>
+
+{% endblock %}
