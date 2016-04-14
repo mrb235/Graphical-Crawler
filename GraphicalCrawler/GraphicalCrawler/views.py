@@ -3,12 +3,12 @@ Routes and views for the flask application.
 """
 
 from datetime import datetime
-from flask import render_template, url_for
+from flask import render_template, url_for, request, redirect
 from GraphicalCrawler import app
 from forms import CrawlerForm
 
 @app.route('/', methods=['GET', 'POST'])
-@app.route('/home')
+@app.route('/home', methods=['GET', 'POST'])
 def home():
     form = CrawlerForm()
     return render_template(
@@ -16,6 +16,22 @@ def home():
         title='Home Page',
         year=datetime.now().year,
         form=form,
+    )
+
+@app.route('/crawl', methods=['GET', 'POST'])
+def crawl():
+    searchType = request.form.get('searchType')
+    starturl = request.form.get('starturl')
+    depth = request.form.get('depth')
+    keywords = request.form.get('keywords')
+    return render_template(
+        'crawl.html',
+        searchType=searchType,
+        starturl=starturl,
+        depth=depth,
+        keywords=keywords,
+        title='URL Crawler',
+        year=datetime.now().year
     )
 
 @app.route('/contact')
