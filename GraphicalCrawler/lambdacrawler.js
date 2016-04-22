@@ -8,11 +8,12 @@ var http = require('http');
 
 
 // Variable to store the post request
-var startUrl;
+var startUrl = "http://web.engr.oregonstate.edu/~grubbm/search.html";
 var keywords;
-var searchType;
-var depth;
-
+var searchType = 'DFS';
+var MAX_PAGES = 10;
+var pagesVisited = 0; 
+/*
 // Adding the express framework 
 app.use(bodyParser.urlencoded({ extended: true}));
 
@@ -30,7 +31,7 @@ app.post('/crawlinfo', function(req, res) {
 app.listen(8080, function() {
 	console.log('Server running at http://127.0.0.1:8080/');
 });
-
+*/
 
 
 
@@ -107,29 +108,37 @@ function Queue(){
 	}
 
 }
-
-
-var gQ = new Queue();
+var searchDS; 
+if(searchType == 'BFS'){
+	searchDS = new Queue();
 //var startUrl = "http://web.engr.oregonstate.edu/~grubbm/search.html";
 //var MAX_PAGES = 100;
 //var pagesVisited = 0;
 
-gQ.Enqueue(startUrl);
-//lambdaCrawler();
+	searchDS.Enqueue(startUrl);
+	lambdaCrawlerBFS();
+}
+else if(searchType == 'DFS'){
 
-function lambdaCrawler() {
+	searchDS = []; 
+	searchDS.push(startUrl); 
+	lambdaCrawlerDFS(); 
 
-    	var nextPage = gQ.Dequeue();
+}
+
+function lambdaCrawlerBFS() {
+
+    	var nextPageBFS = searchDS.Dequeue();
     	if(pagesVisited >= MAX_PAGES){
             	console.log("Crawl Complete");
             	return;
     	}
     	else{
-            	visitPage(nextPage, lambdaCrawler);
+            	visitPageBFS(nextPageBFS, lambdaCrawlerBFS);
             	}
 }
 
-function visitPage(url, callback){
+function visitPageBFS(url, callback){
 
 
 	pagesVisited++;
@@ -145,19 +154,64 @@ function visitPage(url, callback){
  	}
  	// Parse the document body
  	var $ = cheerio.load(body.toLowerCase());
-  	collectInternalLinks($);
+  	collectInternalLinksBFS($);
    	// In this short program, our callback is just calling crawl()
    	callback();
 
     });
 }
 
-function collectInternalLinks($) {
+function collectInternalLinksBFS($) {
 
-    var absoluteLinks = $("a[href^='http']");
-    absoluteLinks.each(function() {
-	    gQ.Enqueue($(this).attr('href'));
+    var absoluteLinksBFS = $("a[href^='http']");
+    absoluteLinksBFS.each(function() {
+	    searchDS.Enqueue($(this).attr('href'));
 	    //pagesToVisit.push($(this).attr('href'));
     });
-    console.log("size of gQ: " + gQ.GetCount());
+    console.log("size of gQ: " + searchDS.GetCount());
+}
+
+
+function lambdaCrawlerDFS() {
+
+    	var nextPageDFS = searchDS.pop();
+    	if(pagesVisited >= MAX_PAGES){
+            	console.log("Crawl Complete");
+            	return;
+    	}
+    	else{
+            	visitPageDFS(nextPageDFS, lambdaCrawlerDFS);
+            	}
+}
+
+function visitPageDFS(url, callback){
+
+
+	pagesVisited++;
+
+  console.log("Visiting page " + url);
+  request(url, function(error, response, body) {
+ 	// Check status code (200 is HTTP OK)
+
+ 	console.log("Status code: " + response.statusCode);
+ 	if(response.statusCode !== 200) {
+   	callback();
+   	return;
+ 	}
+ 	// Parse the document body
+ 	var $ = cheerio.load(body.toLowerCase());
+  	collectInternalLinksDFS($);
+   	// In this short program, our callback is just calling crawl()
+   	callback();
+
+    });
+}
+
+function collectInternalLinksDFS($) {
+
+    var absoluteLinksDFS = $("a[href^='http']");
+    absoluteLinksDFS.each(function() {
+	    searchDS.push($(this).attr('href'));
+	    //pagesToVisit.push($(this).attr('href'));
+    });
 }
