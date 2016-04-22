@@ -46,6 +46,7 @@
     <Folder Include="GraphicalCrawler\templates\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="GraphicalCrawler\templates\crawl.html" />
     <Content Include="requirements.txt" />
     <Content Include="GraphicalCrawler\static\content\bootstrap.css" />
     <Content Include="GraphicalCrawler\static\content\bootstrap.min.css" />
