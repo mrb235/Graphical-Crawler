@@ -10,7 +10,8 @@ var http = require('http');
 // Variable to store the post request
 var startUrl = "http://web.engr.oregonstate.edu/~grubbm/search.html";
 var keywords;
-var searchType = 'DFS';
+var SEARCH_WORD = "dollar";
+var searchType = 'BFS';
 var MAX_PAGES = 10;
 var pagesVisited = 0; 
 /*
@@ -108,6 +109,16 @@ function Queue(){
 	}
 
 }
+
+function searchForWord($, word) {
+  var bodyText = $('html > body').text();
+  if(bodyText.toLowerCase().indexOf(word.toLowerCase()) !== -1) {
+    return true;
+  }
+  return false;
+}
+
+
 var searchDS; 
 if(searchType == 'BFS'){
 	searchDS = new Queue();
@@ -154,9 +165,14 @@ function visitPageBFS(url, callback){
  	}
  	// Parse the document body
  	var $ = cheerio.load(body.toLowerCase());
-  	collectInternalLinksBFS($);
-   	// In this short program, our callback is just calling crawl()
+	var isWordFound = searchForWord($, SEARCH_WORD);
+	if(isWordFound) {
+     		  console.log('Word ' + SEARCH_WORD + ' found at page ' + url);
+	} 
+	else{ 
+		collectInternalLinksBFS($);
    	callback();
+	}
 
     });
 }
@@ -200,9 +216,14 @@ function visitPageDFS(url, callback){
  	}
  	// Parse the document body
  	var $ = cheerio.load(body.toLowerCase());
-  	collectInternalLinksDFS($);
-   	// In this short program, our callback is just calling crawl()
+	var isWordFound = searchForWord($, SEARCH_WORD);
+	if(isWordFound) {
+     		  console.log('Word ' + SEARCH_WORD + ' found at page ' + url);
+	} 
+	else{ 
+	collectInternalLinksDFS($);
    	callback();
+	}
 
     });
 }
