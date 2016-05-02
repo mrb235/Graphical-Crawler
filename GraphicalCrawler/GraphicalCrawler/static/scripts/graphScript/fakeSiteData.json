@@ -1,0 +1,33 @@
+{
+  "nodes":[
+    {"URL":"oregonstate.edu","depth":1},
+    {"URL":"oregon.edu","depth":2},
+    {"URL":"UW.edu","depth":2},
+    {"URL":"WSU.edu","depth":2},
+    {"URL":"pacific.edu","depth":3},
+    {"URL":"harvard.edu","depth":3},
+    {"URL":"yale.edu","depth":3},
+    {"URL":"stanford.edu","depth":3},
+    {"URL":"mit.edu","depth":3},
+    {"URL":"harvymudd.edu","depth":3},
+    {"URL":"ucla.edu","depth":3},
+    {"URL":"ucsb.edu","depth":3},
+    {"URL":"usc.edu","depth":3}
+  ],
+  "links":[
+    {"source":0,"target":1},
+    {"source":0,"target":2},
+    {"source":0,"target":3},
+    {"source":1,"target":4},
+    {"source":1,"target":5},
+    {"source":1,"target":6},
+    {"source":2,"target":7},
+    {"source":2,"target":8},
+    {"source":2,"target":3},
+    {"source":2,"target":9},
+    {"source":3,"target":10},
+    {"source":3,"target":11},
+    {"source":3,"target":6},
+    {"source":3,"target":12}
+  ]
+}

@@ -53,3 +53,13 @@ def about():
         year=datetime.now().year,
         message='Your application description page.'
     )
+
+@app.route('/graph')
+def graph():
+    """Renders the graph page."""
+    return render_template(
+        'graph.html',
+        title='Graph',
+        year=datetime.now().year,
+        message='Initial graph view.'
+    )

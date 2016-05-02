@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+
+{% block styles %}
+<link rel="stylesheet" type="text/css" href="/static/content/graph.css" />
+{% endblock %}
+
+{% block content %}
+
+<h2>{{ title }}.</h2>
+<h3>{{ message }}</h3>
+
+<div id='graph'></div>
+
+{% endblock %}
+
+{% block scripts %}
+	<script src="/static/scripts/D3/d3-3.5.16.min.js"></script>
+	<script src="/static/scripts/graphScript/graph.js"></script>
+{% endblock %}
