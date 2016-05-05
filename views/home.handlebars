@@ -1,0 +1,48 @@
+<div class="jumbotron">
+    <h1>Start Crawling</h1>
+</div>
+
+<form method="POST" action="http://localhost:8080/crawl">
+    <div class="form-group">
+        <label for="starturl">URL:</label>
+        <input type="url" name="starturl" required/>
+    </div>
+    <div class="form-group">
+
+        <label for="keywords">Keywords:</label>
+        <input type="text" name="keywords" />
+
+    </div>
+    <div class="form-group">
+        <label>Search Type:</label>
+        <div class="radio-inline">
+            <label>
+                <input type="radio" name="searchType" value="DFS" />
+                DFS
+            </label>
+        </div>
+        <div class="radio-inline">
+            <label>
+                <input type="radio" name="searchType" value="BFS" selected />
+                BFS
+            </label>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="depth">Depth Limit:</label>
+        <select name="depth" class="form-control">
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>5</option>
+                <option>6</option>
+                <option>7</option>
+                <option>8</option>
+                <option>9</option>
+                <option>10</option>
+                <option>11</option>
+        </select>
+    </div>
+    <button class="btn btn-primary" type="submit">Submit</button>
+
+</div>
