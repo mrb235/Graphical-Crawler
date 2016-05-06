@@ -19,7 +19,7 @@ app.use(express.static(__dirname + '/public'));
 app.use( bodyParser.json()); 
 app.use(bodyParser.urlencoded({ extended: true}));
 
-/*
+
 // Routes
 app.get('/', function(req, res) {
 	res.render('home', {
@@ -44,6 +44,10 @@ app.get('/crawl', function(req, res) {
 	res.render('crawl');
 });
 
+app.get('/about', function(req, res) {
+	res.render('about');
+});
+
 app.get('/graph', function(req, res) {
 	res.render('graph', {
 		title : 'Graph'
@@ -56,7 +60,7 @@ app.listen(8080, function() {
 	console.log('Server running at http://127.0.0.1:8080/');
 });
 
-*/
+
 
 
 
