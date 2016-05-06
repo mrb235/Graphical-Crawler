@@ -1,0 +1,24 @@
+{
+  "name": "lambdacrawler.js",
+  "version": "1.0.0",
+  "description": "Web Crawler project node.js",
+  "main": "lambdacrawler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author(s)": "Mark Rushmere, Matthew Boal & Max Grubb",
+  "license": "",
+  "dependencies": {
+    "body-parser": "^1.15.1",
+    "express": "^4.13.4",
+    "express-handlebars": "^3.0.0",
+    "cookie-parser": "^1.4.1",
+    "http": "^0.0.0",
+    "request": "^2.72.0",
+    "events": "^1.1.0",
+    "cheerio": "^0.20.0"
+	
+
+  }
+}
+
