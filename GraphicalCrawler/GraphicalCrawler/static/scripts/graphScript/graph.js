@@ -35,8 +35,29 @@ d3.json("/static/scripts/graphScript/fakeSiteData.json", function(error, graph) 
       .style("fill", function(d) { return color(d.depth); })
       .call(force.drag);
   
-  node.append("svg:title")
-      .text(function(d) { return d.URL; });
+
+  // node.append("svg:title")
+  //     .text(function(d) { return d.URL; });
+
+  //add tooltip variable
+  var tooltip = d3.select('body').append('div')
+      .attr('class', 'tooltip')
+      .style('opacity',0);
+
+  //make tooltip showup upon mouseover of 
+  node.on('mouseover', function(d) {
+    tooltip.transition() 
+      .duration(100)
+      .style('opacity', .9);
+    tooltip.html(d.URL)
+      .style('left', ( d3.event.pageX - 35) + 'px')
+      .style('top', (d3.event.pageY - 35) + 'px')
+    })
+    .on('mouseout', function(d) {
+      tooltip.transition()
+        .duration(400)
+        .style('opacity', 0)
+    });
 
   force.on("tick", function() {
     link.attr("x1", function(d) { return d.source.x; })
@@ -47,4 +68,5 @@ d3.json("/static/scripts/graphScript/fakeSiteData.json", function(error, graph) 
     node.attr("cx", function(d) { return d.x; })
         .attr("cy", function(d) { return d.y; });
   });
+
 });

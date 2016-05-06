@@ -7,3 +7,16 @@
   stroke: #999;
   stroke-opacity: .6;
 }
+
+.tooltip {	
+    position: absolute;			
+    text-align: center;			
+    width: 70px;					
+    height: 22px;					
+    padding: 2px;				
+    font: 12px sans-serif;		
+    background: lightgray;
+    border: 0px;		
+    border-radius: 7px;			
+    pointer-events: none;			
+}
