@@ -19,7 +19,7 @@ app.use(express.static(__dirname + '/public'));
 app.use( bodyParser.json()); 
 app.use(bodyParser.urlencoded({ extended: true}));
 
-
+/*
 // Routes
 app.get('/', function(req, res) {
 	res.render('home', {
@@ -57,7 +57,7 @@ app.listen(8080, function() {
 	console.log('Server running at http://127.0.0.1:8080/');
 });
 
-
+*/
 
 
 
@@ -85,41 +85,32 @@ app.post('/crawlinfo', function(req, res) {
 
 function Queue(){
 	var count = 0;
-	//Yes, I don't use back and front.
 	var head = null;
 	var tail = null;
 
-	//Returns the number of items in the queue
 	this.GetCount = function(){
     	return count;
 	}
 
-	/* Methods */
 
 
 	this.Enqueue = function (data) {
-		//Creates a node with the data
 		var node = {
 	    	data: data,
-	    	//next points to value straight way. If head is null, it won't be a problem
 	    	next: head
 		};
 
-		//if it is the first item, then the head is also the tail
 		if (head === null) {
 	    	tail = node;
 		}
 
-		//defines the node as the new head
 		head = node;
 
-		//increases the count
 		count++;
 	}
 
 
 	this.Dequeue = function () {
-		//if queue is empty, returns null
 		if (count === 0) {
 	    	return;
 		}
@@ -128,23 +119,16 @@ function Queue(){
 	    	var current = head;
 	    	var previous = null;
 
-	    	//while there is a next, it will advance the queue.
-	    	//the idea is to have "current" at the end and "previous" as the one before last
 	    	while (current.next) {
 	        	previous = current;
 	        	current = current.next;
 	    	}
 
-	    	//if there is more than 1 item,
-	    	//Removes the tail and decreases count by 1.
 	    	if (count > 1) {
-	        	//Remove the reference to the last one.
 	        	previous.next = null;
 
-	        	//makes tail point to the previous node.
 	        	tail = previous;
 	    	}
-	    	//resets the queue
 	    	else {
 	        	head = null;
 	        	tail = null;
@@ -201,20 +185,18 @@ function visitPageBFS(url, callback){
 
 	pagesVisited++;
 
-  console.log("Visiting page " + url);
+  console.log("Current page " + url);
   request(url, function(error, response, body) {
- 	// Check status code (200 is HTTP OK)
 
  	console.log("Status code: " + response.statusCode);
  	if(response.statusCode !== 200) {
    	callback();
    	return;
  	}
- 	// Parse the document body
  	var $ = cheerio.load(body.toLowerCase());
 	var isWordFound = searchForWord($, SEARCH_WORD);
 	if(isWordFound) {
-     		  console.log('Word ' + SEARCH_WORD + ' found at page ' + url);
+     		  console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
 	} 
 	else{ 
 		collectInternalLinksBFS($);
@@ -229,7 +211,6 @@ function collectInternalLinksBFS($) {
     var absoluteLinksBFS = $("a[href^='http']");
     absoluteLinksBFS.each(function() {
 	    searchDS.Enqueue($(this).attr('href'));
-	    //pagesToVisit.push($(this).attr('href'));
     });
     console.log("size of gQ: " + searchDS.GetCount());
 }
@@ -252,9 +233,8 @@ function visitPageDFS(url, callback){
 
 	pagesVisited++;
 
-  console.log("Visiting page " + url);
+  console.log("Current page " + url);
   request(url, function(error, response, body) {
- 	// Check status code (200 is HTTP OK)
 
  	console.log("Status code: " + response.statusCode);
  	if(response.statusCode !== 200) {
@@ -265,7 +245,7 @@ function visitPageDFS(url, callback){
  	var $ = cheerio.load(body.toLowerCase());
 	var isWordFound = searchForWord($, SEARCH_WORD);
 	if(isWordFound) {
-     		  console.log('Word ' + SEARCH_WORD + ' found at page ' + url);
+     		  console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
 	} 
 	else{ 
 	collectInternalLinksDFS($);
