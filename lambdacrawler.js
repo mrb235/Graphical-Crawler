@@ -44,7 +44,6 @@ app.get('/crawl', function(req, res) {
 	res.render('crawl');
 });
 
-// Routes
 app.get('/graph', function(req, res) {
 	res.render('graph', {
 		title : 'Graph'
