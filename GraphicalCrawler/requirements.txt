@@ -1,0 +1,5 @@
+Flask>=0.10
+Flask-WTF>0.9
+Jinja2==2.8
+pydocumentdb==1.6.0
+WTForms==2.1

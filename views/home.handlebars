@@ -1,8 +1,10 @@
+<!doctype html>
+
 <div class="jumbotron">
     <h1>Start Crawling</h1>
 </div>
 
-<form method="POST" action="http://localhost:8080/crawl">
+<form method="POST" action="http://52.89.60.16:3003/crawl">
     <div class="form-group">
         <label for="starturl">URL:</label>
         <input type="url" name="starturl" required/>
@@ -10,7 +12,7 @@
     <div class="form-group">
 
         <label for="keywords">Keywords:</label>
-        <input type="text" name="keywords" />
+        <input type="text" name="keywords" required />
 
     </div>
     <div class="form-group">
