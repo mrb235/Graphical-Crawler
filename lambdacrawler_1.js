@@ -30,6 +30,8 @@ app.use(express.static(__dirname + '/public'));
 // Adding the express framework
 app.use( bodyParser.json()); 
 app.use(bodyParser.urlencoded({ extended: true}));
+app.use(cookieParser());
+
 
 
 // Routes
@@ -39,11 +41,39 @@ app.get('/', function(req, res) {
 	});
 });
 
+app.get('/ck', function(req, res){
+
+
+var list = {},
+
+/*internal listing of cookies -- to console.log*/
+
+rc = req.headers.cookie;
+
+rc && rc.split(';').forEach(function( cookie ) {
+        var parts = cookie.split('=');
+        list[parts.shift().trim()] = decodeURI(parts.join('='));
+    });
+
+
+ console.log("Cookies: ", list);
+
+console.log(JSON.stringify(res.cookie));
+ res.writeHead(200, {
+    'Set-Cookie': 'mycookie=test',
+    'Content-Type': 'text/plain'
+  });
+  res.end('Hello World\n');
+
+});
+
 app.post('/crawl', function(req, res) {
 	 startUrl = req.body.starturl;
 	 SEARCH_WORD = req.body.keywords;
 	 searchType = req.body.searchType;
 	 MAX_PAGES = req.body.depth;
+
+//  res.end('Hello World\n');
 
 if(searchType == 'BFS'){
 	searchDS = new Queue();
@@ -237,7 +267,7 @@ function visitPageBFS(url, res, callback){
  	var $ = cheerio.load(body.toLowerCase());
 	var isWordFound = searchForWord($, SEARCH_WORD);
 	if(isWordFound) {
-     		 console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
+    		 console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
 		dataHolder.sites.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
 		res.send(dataHolder.sites);
 		pagesVisited = 0; 
