@@ -13,14 +13,19 @@ var cheerio = require('cheerio');
 var app	= express();
 
 var dataHolder = {};
-dataHolder.sites = []; 
-dataHolder.structLength = [];
+dataHolder.nodes = []; 
+dataHolder.links = [];
 var searchDS; 
 var startUrl;
 var SEARCH_WORD;
 var searchType;
 var MAX_PAGES;
 var pagesVisited = 0;
+var visited = [];
+var foundOnEach = [];
+var numLinksFound = 0;
+var totalLinksFound = 0;
+
 
 
 app.engine('handlebars', exphbs({defaultLayout: 'main'}));
@@ -87,7 +92,7 @@ app.get('/graph', function(req, res) {
 
 
 // Start the server
-app.listen(3003, function() {
+app.listen(8080, function() {
 	console.log('Server running at http://127.0.0.1:8080/');
 });
 
@@ -206,10 +211,10 @@ function lambdaCrawlerBFS(res) {
 	var nextPageBFS = searchDS.Dequeue();
     	if(pagesVisited >= MAX_PAGES){
             	console.log("Crawl Complete");
-		res.send(dataHolder.sites);
+		res.send(dataHolder.nodes);
 		pagesVisited = 0; 
-		dataHolder.sites = []; 
-		dataHolder.structLength = [];
+		dataHolder.nodes = []; 
+		dataHolder.links = [];
 		return;
     	}
     	else{
@@ -223,7 +228,7 @@ function visitPageBFS(url, res, callback){
 	pagesVisited++;
 
 	  console.log("Current page " + url);
-	dataHolder.sites.push(url); 
+	dataHolder.nodes.push(url); 
   request(url,  function(error, response, body) {
 
  	console.log("Status code: " + response.statusCode);
@@ -235,11 +240,11 @@ function visitPageBFS(url, res, callback){
 	var isWordFound = searchForWord($, SEARCH_WORD);
 	if(isWordFound) {
      		 console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-		dataHolder.sites.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-		res.send(dataHolder.sites);
+		dataHolder.nodes.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
+		res.send(dataHolder.nodes);
 		pagesVisited = 0; 
-		dataHolder.sites = []; 
-		dataHolder.structLength = [];
+		dataHolder.nodes = []; 
+		dataHolder.links = [];
 
 	} 
 	else{ 
@@ -262,20 +267,33 @@ function collectInternalLinksBFS($) {
 
 function lambdaCrawlerDFS(res) {
 
-    	var nextPageDFS = searchDS.pop();
-	dataHolder.sites.push(nextPageDFS); 		 
-    	if(pagesVisited >= MAX_PAGES){
-            	console.log("Crawl Complete");
-		res.send(dataHolder.sites);
+    var nextPageDFS = searchDS.pop();
+    
+			 
+    if(pagesVisited >= MAX_PAGES){
+        console.log("Crawl Complete");
+		res.send(dataHolder);
 		pagesVisited = 0; 
-		dataHolder.sites = []; 
-		dataHolder.structLength = [];
+		dataHolder.nodes = []; 
+		dataHolder.links = [];
+		visited = [];
+		foundOnEach = [];
 
-            	return;
-    	}
-    	else{
-            	visitPageDFS(nextPageDFS, res,  lambdaCrawlerDFS);
-            	}
+    	return;
+    }
+    else{
+    	// Add the current page to the data holder.
+    	siteInfo = {};
+	    siteInfo.URL = nextPageDFS;
+	    siteInfo.depth = pagesVisited;
+	    dataHolder.nodes.push(siteInfo);
+
+	    // Get the links on page
+        visitPageDFS(nextPageDFS, res,  lambdaCrawlerDFS);
+
+        // Add links found on page and connections
+        buildJsonDFS();
+    }
 }
 
 function visitPageDFS(url, res, callback){
@@ -283,27 +301,32 @@ function visitPageDFS(url, res, callback){
 
 	pagesVisited++;
 
-  console.log("Current page " + url);
- request(url, function(error, response, body) {
+	console.log("Current page " + url);
+	request(url, function(error, response, body) {
 
  	console.log("Status code: " + response.statusCode);
+
  	if(response.statusCode !== 200) {
-   	callback(res);
-   	return;
+	   	callback(res);
+	   	return;
  	}
  	var $ = cheerio.load(body.toLowerCase());
 	var isWordFound = searchForWord($, SEARCH_WORD);
+
 	if(isWordFound) {
-     			console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-			dataHolder.sites.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-			res.send(dataHolder.sites);
-			pagesVisited = 0; 
-			dataHolder.sites = []; 
-			dataHolder.structLength = [];
+ 		console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
+		//dataHolder.nodes.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
+		res.send(dataHolder);
+		pagesVisited = 0; 
+		dataHolder.nodes = []; 
+		dataHolder.links = [];
+		visited = [];
+		foundOnEach = [];
+
 	} 
 	else{ 
-	collectInternalLinksDFS($);
-   	callback(res);
+		collectInternalLinksDFS($);
+	   	callback(res);
 	}
 	
     });
@@ -312,8 +335,34 @@ function visitPageDFS(url, res, callback){
 function collectInternalLinksDFS($) {
 
     var absoluteLinksDFS = $("a[href^='http']");
+    numLinksFound = 0;
     absoluteLinksDFS.each(function() {
 	    searchDS.push($(this).attr('href'));
 	    //pagesToVisit.push($(this).attr('href'));
+	    numLinksFound++;
+	    totalLinksFound++;
     });
+}
+
+function buildJsonDFS() {
+	var curSite;
+	var counter = 0;
+
+	// Get all URLS found on current page
+	for (i = (searchDS.length - numLinksFound); i < searchDS.length; i++) {
+		// Add website and link to dataHolder to each
+		counter++;
+		siteInfo = {};
+		linkInfo = {};
+		curSite = searchDS[i];
+		siteInfo.URL = curSite;
+		siteInfo.depth = pagesVisited;
+		dataHolder.nodes.push(siteInfo);
+
+		// Add a link from each url to the current page
+		linkInfo.source = pagesVisited + totalLinksFound;
+		linkInfo.target = pagesVisited + totalLinksFound + counter;
+		dataHolder.links.push(linkInfo);
+	}
+
 }
