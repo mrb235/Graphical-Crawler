@@ -21,8 +21,6 @@ var SEARCH_WORD;
 var searchType;
 var MAX_PAGES;
 var pagesVisited = 0;
-var visited = [];
-var foundOnEach = [];
 var numLinksFound = 0;
 var totalLinksFound = 0;
 
@@ -52,15 +50,10 @@ app.post('/crawl', function(req, res) {
 
 if(searchType == 'BFS'){
 	searchDS = new Queue();
-//var startUrl = "http://web.engr.oregonstate.edu/~grubbm/search.html";
-//var MAX_PAGES = 100;
-//var pagesVisited = 0;
-
 	searchDS.Enqueue(startUrl);
 	lambdaCrawlerBFS(res); 
 }
 else if(searchType == 'DFS'){
-
 	searchDS = []; 
 	searchDS.push(startUrl); 
 	lambdaCrawlerDFS(res); 
@@ -189,37 +182,33 @@ function searchForWord($, word) {
   return false;
 }
 
-/*
-var searchDS; 
-if(searchType == 'BFS'){
-	searchDS = new Queue();
-//var startUrl = "http://web.engr.oregonstate.edu/~grubbm/search.html";
-//var MAX_PAGES = 100;
-//var pagesVisited = 0;
-	searchDS.Enqueue(startUrl);
-	lambdaCrawlerBFS();
-}
-else if(searchType == 'DFS'){
-	searchDS = []; 
-	searchDS.push(startUrl); 
-	lambdaCrawlerDFS(); 
-}
-*/
 
 function lambdaCrawlerBFS(res) {
 	
 	var nextPageBFS = searchDS.Dequeue();
-    	if(pagesVisited >= MAX_PAGES){
-            	console.log("Crawl Complete");
+
+    if(pagesVisited >= MAX_PAGES){
+        console.log("Crawl Complete");
 		res.send(dataHolder.nodes);
 		pagesVisited = 0; 
 		dataHolder.nodes = []; 
 		dataHolder.links = [];
+		totalLinksFound = 0;
 		return;
-    	}
-    	else{
-            	visitPageBFS(nextPageBFS, res, lambdaCrawlerBFS);
-            	}
+    }
+   	else{
+   		// Add the current page to the dataHolder
+		siteInfo = {};
+	    siteInfo.URL = nextPageDFS;
+	    siteInfo.depth = pagesVisited;
+	    dataHolder.nodes.push(siteInfo);
+
+	    // Collect the links
+		visitPageBFS(nextPageBFS, res, lambdaCrawlerBFS);
+
+		// Add all found links to dataHolder
+		buildJsonBFS();
+    }
 }
 
 function visitPageBFS(url, res, callback){
@@ -227,29 +216,32 @@ function visitPageBFS(url, res, callback){
 
 	pagesVisited++;
 
-	  console.log("Current page " + url);
+	console.log("Current page " + url);
 	dataHolder.nodes.push(url); 
-  request(url,  function(error, response, body) {
+	request(url,  function(error, response, body) {
 
  	console.log("Status code: " + response.statusCode);
  	if(response.statusCode !== 200) {
-   	callback(res);
-   	return;
+   		callback(res);
+   		return;
  	}
+
  	var $ = cheerio.load(body.toLowerCase());
 	var isWordFound = searchForWord($, SEARCH_WORD);
+
 	if(isWordFound) {
-     		 console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
+     	console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
 		dataHolder.nodes.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
 		res.send(dataHolder.nodes);
 		pagesVisited = 0; 
 		dataHolder.nodes = []; 
 		dataHolder.links = [];
+		totalLinksFound = 0;
 
 	} 
 	else{ 
 		collectInternalLinksBFS($);
-   	callback(res);
+   		callback(res);
 	}
 	
     });
@@ -258,8 +250,11 @@ function visitPageBFS(url, res, callback){
 function collectInternalLinksBFS($) {
 
     var absoluteLinksBFS = $("a[href^='http']");
+    numLinksFound = 0;
     absoluteLinksBFS.each(function() {
 	    searchDS.Enqueue($(this).attr('href'));
+	    numLinksFound++;
+	   	totalLinksFound++;
     });
     console.log("size of gQ: " + searchDS.GetCount());
 }
@@ -276,8 +271,7 @@ function lambdaCrawlerDFS(res) {
 		pagesVisited = 0; 
 		dataHolder.nodes = []; 
 		dataHolder.links = [];
-		visited = [];
-		foundOnEach = [];
+		totalLinksFound = 0;
 
     	return;
     }
@@ -320,8 +314,7 @@ function visitPageDFS(url, res, callback){
 		pagesVisited = 0; 
 		dataHolder.nodes = []; 
 		dataHolder.links = [];
-		visited = [];
-		foundOnEach = [];
+		totalLinksFound = 0;
 
 	} 
 	else{ 
@@ -364,5 +357,38 @@ function buildJsonDFS() {
 		linkInfo.target = pagesVisited + totalLinksFound + counter;
 		dataHolder.links.push(linkInfo);
 	}
+
+}
+
+function buildJsonBFS() {
+	var curSite;
+	var counter = 0;
+	var currentNode;
+
+	// Add all the newly added links to dataHolder
+	for(i = 0; i < numLinksFound; i++) {
+		// Vars
+		siteInfo = {};
+		linkInfo = {};
+
+		// Start at the last added link
+		currentNode = searchDS.head;
+
+		// Get the url and add it to the dataHolder
+		siteInfo.URL = currentNode.data;
+		siteInfo.depth = numLinksFound;
+		dataHolder.nodes.push(siteInfo);
+
+
+		// Add a link from url to current page
+		linkInfo.souce = pagesVisied +totalLinksFound;
+		linkInfo.target = pagesVisited + totalLinksFound + counter;
+		dataHolder.links.push(linkInfo);
+
+		// Go to next link in queue
+		correntNode = currentNode.next;
+
+	}
+
 
 }
