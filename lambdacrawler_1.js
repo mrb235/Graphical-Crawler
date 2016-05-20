@@ -121,6 +121,14 @@ function Queue(){
 	var head = null;
 	var tail = null;
 
+	this.GetHead = function() {
+		return head;
+	}
+
+	this.GetTail = function() {
+		return tail;
+	}
+
 	this.GetCount = function(){
     	return count;
 	}
@@ -199,7 +207,7 @@ function lambdaCrawlerBFS(res) {
    	else{
    		// Add the current page to the dataHolder
 		siteInfo = {};
-	    siteInfo.URL = nextPageDFS;
+	    siteInfo.URL = nextPageBFS;
 	    siteInfo.depth = pagesVisited;
 	    dataHolder.nodes.push(siteInfo);
 
@@ -353,8 +361,8 @@ function buildJsonDFS() {
 		dataHolder.nodes.push(siteInfo);
 
 		// Add a link from each url to the current page
-		linkInfo.source = pagesVisited + totalLinksFound;
-		linkInfo.target = pagesVisited + totalLinksFound + counter;
+		linkInfo.source = pagesVisited;
+		linkInfo.target = pagesVisited + counter;
 		dataHolder.links.push(linkInfo);
 	}
 
@@ -372,7 +380,7 @@ function buildJsonBFS() {
 		linkInfo = {};
 
 		// Start at the last added link
-		currentNode = searchDS.head;
+		currentNode = searchDS.GetHead();
 
 		// Get the url and add it to the dataHolder
 		siteInfo.URL = currentNode.data;
@@ -381,8 +389,8 @@ function buildJsonBFS() {
 
 
 		// Add a link from url to current page
-		linkInfo.souce = pagesVisied +totalLinksFound;
-		linkInfo.target = pagesVisited + totalLinksFound + counter;
+		linkInfo.souce = pagesVisited;
+		linkInfo.target = pagesVisited + counter;
 		dataHolder.links.push(linkInfo);
 
 		// Go to next link in queue
