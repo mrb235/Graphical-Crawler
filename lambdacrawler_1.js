@@ -23,6 +23,7 @@ var MAX_PAGES;
 var pagesVisited = 0;
 var numLinksFound = 0;
 var totalLinksFound = 0;
+var nodeToLink;
 
 
 
@@ -68,8 +69,6 @@ else if(searchType == 'DFS'){
 */
 
 app.get('/crawlHold', function(req, res) {
-
-
 	res.send();
 });
 
@@ -197,7 +196,7 @@ function lambdaCrawlerBFS(res) {
 
     if(pagesVisited >= MAX_PAGES){
         console.log("Crawl Complete");
-		res.send(dataHolder.nodes);
+		res.send(dataHolder);
 		pagesVisited = 0; 
 		dataHolder.nodes = []; 
 		dataHolder.links = [];
@@ -240,11 +239,12 @@ function visitPageBFS(url, res, callback){
 	if(isWordFound) {
      	console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
 		dataHolder.nodes.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-		res.send(dataHolder.nodes);
+		res.send(dataHolder);
 		pagesVisited = 0; 
 		dataHolder.nodes = []; 
 		dataHolder.links = [];
 		totalLinksFound = 0;
+
 
 	} 
 	else{ 
@@ -376,6 +376,7 @@ function buildJsonBFS() {
 	// Add all the newly added links to dataHolder
 	for(i = 0; i < numLinksFound; i++) {
 		// Vars
+		counter++;
 		siteInfo = {};
 		linkInfo = {};
 
@@ -383,19 +384,20 @@ function buildJsonBFS() {
 		currentNode = searchDS.GetHead();
 
 		// Get the url and add it to the dataHolder
-		siteInfo.URL = currentNode.data;
-		siteInfo.depth = numLinksFound;
-		dataHolder.nodes.push(siteInfo);
+		if(currentNode != null) {
+			siteInfo.URL = currentNode.data;
+			siteInfo.depth = pagesVisited;
+			dataHolder.nodes.push(siteInfo);
 
+			// Add a link from url to current page
+			linkInfo.source = pagesVisited;
+			linkInfo.target = pagesVisited + counter;
+			dataHolder.links.push(linkInfo);
 
-		// Add a link from url to current page
-		linkInfo.souce = pagesVisited;
-		linkInfo.target = pagesVisited + counter;
-		dataHolder.links.push(linkInfo);
-
-		// Go to next link in queue
-		correntNode = currentNode.next;
-
+			// Go to next link in queue
+			correntNode = currentNode.next;
+		}
+		
 	}
 
 
