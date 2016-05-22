@@ -16,65 +16,65 @@ var svg = d3.select("#graph").append("svg")
 //     .linkDistance(circleRadius)
 //     .size([width, height]);
 
-d3.json("/graph-json/fakeSiteData.json", function(error, graph) {
-    if (error) throw error;
+var jsonData = document.getElementById('graph');
+var graph = JSON.parse(jsonData.getAttribute('data-json-data'));
+// console.log(parsed);
 
-    setDepthInfo(graph);
-    setTotalWeight(graph);
 
-    var links = svg.selectAll(".link")
-        .data(graph.links)
-        ;
+setDepthInfo(graph);
+setTotalWeight(graph);
 
-    var nodes = svg.selectAll(".node")
-        .data(graph.nodes)
-        // .call(force.drag);
-        ;
+var links = svg.selectAll(".link")
+    .data(graph.links)
+    ;
 
-    setChildren(graph, nodes, links);
+var nodes = svg.selectAll(".node")
+    .data(graph.nodes)
+    // .call(force.drag);
+    ;
 
-    links.enter()
-        .append("line")
-        .attr("class", "graph-link")
-        .style("stroke-width", 1.5)
-        .attr("x1", function(link) {return link.x1})
-        .attr("y1", function(link) {return link.y1})
-        .attr("x2", function(link) {return link.x2})
-        .attr("y2", function(link) {return link.y2})
-        ;
+setChildren(graph, nodes, links);
 
-    nodes.enter()
-        .append("circle")
-        .attr("class", "graph-node")
-        .attr("r", 6)
-        .attr("cx", function(node) {return node.x;})
-        .attr("cy", function(node) {return node.y;})
-        .style("fill", function(node) { return color(node.depth); });
+links.enter()
+    .append("line")
+    .attr("class", "graph-link")
+    .style("stroke-width", 1.5)
+    .attr("x1", function(link) {return link.x1})
+    .attr("y1", function(link) {return link.y1})
+    .attr("x2", function(link) {return link.x2})
+    .attr("y2", function(link) {return link.y2})
+    ;
 
-    console.log(graph);
-    console.log(nodes);
-    console.log(links);
+nodes.enter()
+    .append("circle")
+    .attr("class", "graph-node")
+    .attr("r", 6)
+    .attr("cx", function(node) {return node.x;})
+    .attr("cy", function(node) {return node.y;})
+    .style("fill", function(node) { return color(node.depth); });
 
-    // createInitialGraph(graph);
-  
-    setMouseover(nodes);
+console.log(graph);
+console.log(nodes);
+console.log(links);
 
-    // force
-    //     .nodes(graph.nodes)
-    //     .links(graph.links)
-    //     .start();
+// createInitialGraph(graph);
 
-    // force.on("tick", function() {
-    //   link.attr("x1", function(node) { return node.source.x; })
-    //       .attr("y1", function(node) { return node.source.y; })
-    //       .attr("x2", function(node) { return node.target.x; })
-    //       .attr("y2", function(node) { return node.target.y; });
+setMouseover(nodes);
 
-    //   node.attr("cx", function(node) { return node.x; })
-    //       .attr("cy", function(node) { return node.y; });
-    // });
+// force
+//     .nodes(graph.nodes)
+//     .links(graph.links)
+//     .start();
 
-});
+// force.on("tick", function() {
+//   link.attr("x1", function(node) { return node.source.x; })
+//       .attr("y1", function(node) { return node.source.y; })
+//       .attr("x2", function(node) { return node.target.x; })
+//       .attr("y2", function(node) { return node.target.y; });
+
+//   node.attr("cx", function(node) { return node.x; })
+//       .attr("cy", function(node) { return node.y; });
+// });
 
 // function setcx(node) {
 //     if()

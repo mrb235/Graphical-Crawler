@@ -111,7 +111,8 @@ app.get('/about', function(req, res) {
 
 app.get('/graph', function(req, res) {
 	res.render('graph', {
-		title : 'Graph'
+		title : 'Graph',
+		jsonData : JSON.stringify(require('./public/graph-json/fakeSiteData.json'))
 	});
 });
 
