@@ -33,6 +33,16 @@ var links = svg.append("svg:g").selectAll("path")
     .data(graph.links)
     ;
 
+var tooltip = d3.select('body').append('div')
+    .attr('class', 'graph-tooltip')
+    .style('opacity',0)
+    .on('mouseover', function() {
+        tooltip.transition();
+
+        tooltip.transition().style('opacity', .9);
+    })
+    .on('mouseout', function(tool) { tooltipMouseOut(); });
+
 //calculate the positions of all the links and nodes
 setChildren(graph, nodes, links);
 
@@ -237,33 +247,26 @@ function addChildNodes(nodes, node, link, linkIndex){
 }
 
 function setMouseover(nodes) {
-    var tooltip = d3.select('body').append('div')
-        .attr('class', 'graph-tooltip')
-        .style('opacity',0)
-        .on('mouseover', function(tool) {
-            tool.transition().duration(10)
-            .style('opacity', .9)
-        })
-        .on('mouseout', function(tool) {
-            tool.transition()
-            .duration(2400)
-            .style('opacity', 0)
-        });
 
     nodes.on('mouseover', function(node) {
         tooltip.transition().duration(100)
             .style('opacity', .9);
         tooltip.attr('data-url', node.URL)
-            .html(function(d) { return "<a href"+this.dataset.url+">"+this.dataset.url+"</a>";})
+            .html(function(d) { return "<a href='"+this.dataset.url+"'>"+this.dataset.url+"</a>";})
             .style('left', ( d3.event.pageX - 35) + 'px')
             .style('top', (d3.event.pageY - 35) + 'px')
         })
-        .on('mouseout', function(node) {
-            tooltip.transition()
-            .duration(2400)
-            .style('opacity', 0)
-    });
+        .on('mouseout', function(node) { tooltipMouseOut(); });
+}
 
+function tooltipMouseOut() {
+    tooltip.transition()
+        .duration(2400)
+        .style('opacity', 0);
+    tooltip.transition()
+        .delay(2410)
+        .style('left', 0 + 'px')
+        .style('top', 0 + 'px');
 }
 
 function setDepthInfo(graph) {
