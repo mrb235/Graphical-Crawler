@@ -4,6 +4,7 @@
 }
 
 .graph-link {
+  fill: none;
   stroke: #999;
   stroke-opacity: .6;
 }
@@ -19,4 +20,8 @@
     border: 0px;		
     border-radius: 7px;			
     pointer-events: none;			
+}
+
+.graph-node {
+  z-index: -1;
 }

@@ -16,34 +16,35 @@ var svg = d3.select("#graph").append("svg")
 //     .linkDistance(circleRadius)
 //     .size([width, height]);
 
+//get data from json file and figure out depth and associated children for each node
 var jsonData = document.getElementById('graph');
 var graph = JSON.parse(jsonData.getAttribute('data-json-data'));
-// console.log(parsed);
-
-
 setDepthInfo(graph);
 setTotalWeight(graph);
 
-var links = svg.selectAll(".link")
-    .data(graph.links)
-    ;
-
-var nodes = svg.selectAll(".node")
+//attach the data to each node
+var nodes = svg.append('svg:g').selectAll(".node")
     .data(graph.nodes)
     // .call(force.drag);
     ;
 
+//attach the data to each link
+var links = svg.append("svg:g").selectAll("path")
+    .data(graph.links)
+    ;
+
+//calculate the positions of all the links and nodes
 setChildren(graph, nodes, links);
 
-links.enter()
-    .append("line")
-    .attr("class", "graph-link")
-    .style("stroke-width", 1.5)
-    .attr("x1", function(link) {return link.x1})
-    .attr("y1", function(link) {return link.y1})
-    .attr("x2", function(link) {return link.x2})
-    .attr("y2", function(link) {return link.y2})
-    ;
+// links.enter()
+//     .append("line")
+//     .attr("class", "graph-link")
+//     .style("stroke-width", 1.5)
+//     .attr("x1", function(link) {return link.x1})
+//     .attr("y1", function(link) {return link.y1})
+//     .attr("x2", function(link) {return link.x2})
+//     .attr("y2", function(link) {return link.y2})
+//     ;
 
 nodes.enter()
     .append("circle")
@@ -52,6 +53,39 @@ nodes.enter()
     .attr("cx", function(node) {return node.x;})
     .attr("cy", function(node) {return node.y;})
     .style("fill", function(node) { return color(node.depth); });
+
+//http://bl.ocks.org/d3noob/5141278
+//Create the arrows
+svg.append("svg:defs").selectAll("marker")
+    .data(["end"])      
+  .enter().append("svg:marker")    // This section adds in the arrows
+    .attr("id", String)
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 15)
+    .attr("refY", -1.5)
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 6)
+    .attr("orient", "auto")
+  .append("svg:path")
+    .attr("d", "M0,-5L10,0L0,5");
+
+//http://bl.ocks.org/d3noob/5141278
+//attach the arrows to the links, and make the links curve
+links.enter()
+    .append('svg:path')
+    .attr('class', 'graph-link')
+    .attr('marker-end', 'url(#end)')
+    .attr("d", function(link) {
+        var dx = link.x2 - link.x1,
+            dy = link.y2 - link.y1,
+            dr = Math.sqrt(dx * dx + dy * dy);
+        return "M" + 
+            link.x1 + "," + 
+            link.y1 + "A" + 
+            dr + "," + dr + " 0 0,1 " + 
+            link.x2 + "," + 
+            link.y2;
+    });
 
 console.log(graph);
 console.log(nodes);
