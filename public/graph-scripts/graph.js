@@ -23,7 +23,7 @@ setDepthInfo(graph);
 setTotalWeight(graph);
 
 //attach the data to each node
-var nodes = svg.append('svg:g').selectAll(".node")
+var nodes = svg.selectAll(".node")
     .data(graph.nodes)
     // .call(force.drag);
     ;
@@ -49,7 +49,7 @@ setChildren(graph, nodes, links);
 nodes.enter()
     .append("circle")
     .attr("class", "graph-node")
-    .attr("r", 6)
+    .attr("r", 5)
     .attr("cx", function(node) {return node.x;})
     .attr("cy", function(node) {return node.y;})
     .style("fill", function(node) { return color(node.depth); });
@@ -239,21 +239,31 @@ function addChildNodes(nodes, node, link, linkIndex){
 function setMouseover(nodes) {
     var tooltip = d3.select('body').append('div')
         .attr('class', 'graph-tooltip')
-        .style('opacity',0);
+        .style('opacity',0)
+        .on('mouseover', function(tool) {
+            tool.transition().duration(10)
+            .style('opacity', .9)
+        })
+        .on('mouseout', function(tool) {
+            tool.transition()
+            .duration(2400)
+            .style('opacity', 0)
+        });
 
     nodes.on('mouseover', function(node) {
-        tooltip.transition() 
-            .duration(100)
+        tooltip.transition().duration(100)
             .style('opacity', .9);
-        tooltip.html(node.URL)
+        tooltip.attr('data-url', node.URL)
+            .html(function(d) { return "<a href"+this.dataset.url+">"+this.dataset.url+"</a>";})
             .style('left', ( d3.event.pageX - 35) + 'px')
             .style('top', (d3.event.pageY - 35) + 'px')
         })
         .on('mouseout', function(node) {
             tooltip.transition()
-            .duration(400)
+            .duration(2400)
             .style('opacity', 0)
     });
+
 }
 
 function setDepthInfo(graph) {
