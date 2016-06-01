@@ -44,6 +44,7 @@ app.get('/', function(req, res) {
 	});
 });
 
+
 app.get('/ck', function(req, res){
 
 
@@ -76,35 +77,36 @@ app.post('/crawl', function(req, res) {
 	 searchType = req.body.searchType;
 	 MAX_PAGES = req.body.depth;
 
-//  res.end('Hello World\n');
+	//  res.end('Hello World\n');
 
-if(searchType == 'BFS'){
-	searchDS = new Queue();
-	//var startUrl = "http://web.engr.oregonstate.edu/~grubbm/search.html";
-	//var MAX_PAGES = 100;
-	//var pagesVisited = 0;
+	if(searchType == 'BFS'){
+		searchDS = new Queue();
+		//var startUrl = "http://web.engr.oregonstate.edu/~grubbm/search.html";
+		//var MAX_PAGES = 100;
+		//var pagesVisited = 0;
 
-	searchDS.Enqueue(startUrl);
-	lambdaCrawlerBFS(res); 
-}
-else if(searchType == 'DFS'){
+		searchDS.Enqueue(startUrl);
+		lambdaCrawlerBFS(); 
+	}
+	else if(searchType == 'DFS'){
 
-	searchDS = []; 
-	searchDS.push(startUrl); 
-	lambdaCrawlerDFS(res); 
-}
+		searchDS = []; 
+		searchDS.push(startUrl); 
+		lambdaCrawlerDFS(res); 
+	}
 
+	res.render('graph', {
+			title : 'Graph',
+			jsonData : JSON.stringify(dataHolder)
+	});
+	console.log(dataHolder);
+	pagesVisited = 0; 
+	dataHolder.nodes = []; 
+	dataHolder.links = [];
+	totalLinksFound = 0;
 
 });
 
-/*app.get('/crawl', function(req, res) {
-	res.render('crawl');
-});
-*/
-
-app.get('/crawlHold', function(req, res) {
-	res.send();
-});
 
 app.get('/about', function(req, res) {
 	res.render('about');
@@ -122,17 +124,6 @@ app.get('/graph', function(req, res) {
 app.listen(3003, function() {
 	console.log('Server running at http://127.0.0.1:3003/');
 });
-
-
-// Accept post reqeusts from the website
-app.post('/crawlinfo', function(req, res) {
-	startUrl = req.body.starturl;
-	keywords = req.body.keywords;
-	searchType = req.body.searchType;
-	depth = req.body.depth;
-	res.send('recieved url: ' + startUrl + '.');
-});
-
 
 
 function Queue(){
@@ -202,17 +193,13 @@ function searchForWord($, word) {
 }
 
 
-function lambdaCrawlerBFS(res) {
+function lambdaCrawlerBFS() {
 	
 	var nextPageBFS = searchDS.Dequeue();
 
 	if(pagesVisited >= MAX_PAGES){	
         console.log("Crawl Complete");
-		res.send(dataHolder);
-		pagesVisited = 0; 
-		dataHolder.nodes = []; 
-		dataHolder.links = [];
-		totalLinksFound = 0;
+		//res.send(dataHolder);
 		return;
 	}
 	else{
@@ -223,14 +210,14 @@ function lambdaCrawlerBFS(res) {
 	    dataHolder.nodes.push(siteInfo);
 
 	    // Collect the links
-		visitPageBFS(nextPageBFS, res, lambdaCrawlerBFS);
+		visitPageBFS(nextPageBFS, lambdaCrawlerBFS);
 
 		// Add all found links to dataHolder
 		buildJsonBFS();
     }
 }
 
-function visitPageBFS(url, res, callback){
+function visitPageBFS(url, callback){
 
 
 	pagesVisited++;
@@ -239,29 +226,25 @@ function visitPageBFS(url, res, callback){
 	dataHolder.nodes.push(url); 
   	request(url,  function(error, response, body) {
 
- 	console.log("Status code: " + response.statusCode);
- 	if(response.statusCode !== 200) {
-	   	callback(res);
-	   	return;
- 	}
+	 	console.log("Status code: " + response.statusCode);
+	 	if(response.statusCode !== 200) {
+		   	//callback(res);
+		   	return;
+	 	}
 
- 	var $ = cheerio.load(body.toLowerCase());
-	var isWordFound = searchForWord($, SEARCH_WORD);
+	 	var $ = cheerio.load(body.toLowerCase());
+		var isWordFound = searchForWord($, SEARCH_WORD);
 
-	if(isWordFound) {
-    	console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-		dataHolder.nodes.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-		res.send(dataHolder);
-		pagesVisited = 0; 
-		dataHolder.nodes = []; 
-		dataHolder.links = [];
-		totalLinksFound = 0;
+		if(isWordFound) {
+	    	console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
+			dataHolder.nodes.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
+			//res.send(dataHolder);
 
-	} 
-	else{ 
-		collectInternalLinksBFS($);
-   		callback(res);
-	}
+		} 
+		else{ 
+			collectInternalLinksBFS($);
+	   		//callback(res);
+		}
 	
     });
 }
@@ -279,18 +262,15 @@ function collectInternalLinksBFS($) {
 }
 
 
-function lambdaCrawlerDFS(res) {
+function lambdaCrawlerDFS() {
 
     var nextPageDFS = searchDS.pop();
 
     if(pagesVisited >= MAX_PAGES){
 
         console.log("Crawl Complete");
-		res.send(dataHolder);
-		pagesVisited = 0; 
-		dataHolder.nodes = []; 
-		dataHolder.links = [];
-		totalLinksFound = 0;
+		//res.send(dataHolder);
+
 
         return;
 	}
@@ -302,14 +282,14 @@ function lambdaCrawlerDFS(res) {
 	    dataHolder.nodes.push(siteInfo);
 
 	    // Get the links on page
-        visitPageDFS(nextPageDFS, res,  lambdaCrawlerDFS);
+        visitPageDFS(nextPageDFS, lambdaCrawlerDFS);
 
         // Add links found on page and connections
         buildJsonDFS();
     }
 }
 
-function visitPageDFS(url, res, callback){
+function visitPageDFS(url, callback){
 
 
 	pagesVisited++;
@@ -320,7 +300,7 @@ function visitPageDFS(url, res, callback){
 	 	console.log("Status code: " + response.statusCode);
 
 	 	if(response.statusCode !== 200) {
-		   	callback(res);
+		   	//callback(res);
 		   	return;
 	 	}
 
@@ -330,15 +310,11 @@ function visitPageDFS(url, res, callback){
 		if(isWordFound) {
 	 		console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
 			dataHolder.nodes.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-			res.send(dataHolder.nodes);
-			pagesVisited = 0; 
-			dataHolder.nodes = []; 
-			dataHolder.links = [];
-			totalLinksFound = 0;
+			//res.send(dataHolder.nodes);
 		} 
 		else{ 
 			collectInternalLinksDFS($);
-		   	callback(res);
+		   	//callback(res);
 		}
 	
     });
