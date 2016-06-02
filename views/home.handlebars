@@ -1,13 +1,17 @@
 <!doctype html>
+<body onload="getC()">
+<script>
 
+
+</script>
 <div class="jumbotron">
     <h1>Start Crawling</h1>
 </div>
 
-<form method="POST" action="http://52.89.60.16:3003/crawl">
+<form method="POST" action="http://127.0.0.1:3003/crawl">
     <div class="form-group">
         <label for="starturl">URL:</label>
-        <input type="url" name="starturl" required/>
+        <input type="url" id="starturl" name="starturl" required/>
     </div>
     <div class="form-group">
 
@@ -45,6 +49,49 @@
                 <option>11</option>
         </select>
     </div>
-    <button class="btn btn-primary" type="submit">Submit</button>
+    <button onclick="cookieFunction()" class="btn btn-primary" type="submit">Submit</button>
+	<script>
+	
+	function cookieFunction(){
+	
+		var cookieVal = document.getElementById("starturl").value;
+		console.log(alert(cookieVal));
+	
 
+	function setCookie(cname, cvalue, exdays) {
+	    var d = new Date();
+	    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+	    var expires = "expires="+ d.toUTCString();
+	    document.cookie = cname + "=" + cvalue + "; " + expires;
+	} 
+
+
+	setCookie("startpage", cookieVal, 15);
+}	
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
+}
+
+function getC(){
+
+ var page = getCookie("startpage");
+
+	console.log(alert(page));
+	document.getElementById("starturl").value = page; 
+
+}
+	</script>
 </div>
+</body>

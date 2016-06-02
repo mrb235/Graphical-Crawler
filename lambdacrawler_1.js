@@ -13,14 +13,17 @@ var cheerio = require('cheerio');
 var app	= express();
 
 var dataHolder = {};
-dataHolder.sites = []; 
-dataHolder.structLength = [];
+dataHolder.nodes = []; 
+dataHolder.links = [];
 var searchDS; 
 var startUrl;
 var SEARCH_WORD;
 var searchType;
 var MAX_PAGES;
 var pagesVisited = 0;
+var numLinksFound = 0;
+var totalLinksFound = 0;
+var nodeToLink;
 
 
 app.engine('handlebars', exphbs({defaultLayout: 'main'}));
@@ -44,26 +47,26 @@ app.get('/', function(req, res) {
 app.get('/ck', function(req, res){
 
 
-var list = {},
+	var list = {},
 
-/*internal listing of cookies -- to console.log*/
+	/*internal listing of cookies -- to console.log*/
 
-rc = req.headers.cookie;
+	rc = req.headers.cookie;
 
-rc && rc.split(';').forEach(function( cookie ) {
-        var parts = cookie.split('=');
-        list[parts.shift().trim()] = decodeURI(parts.join('='));
-    });
+	rc && rc.split(';').forEach(function( cookie ) {
+	        var parts = cookie.split('=');
+	        list[parts.shift().trim()] = decodeURI(parts.join('='));
+	    });
 
 
- console.log("Cookies: ", list);
+	 console.log("Cookies: ", list);
 
-console.log(JSON.stringify(res.cookie));
- res.writeHead(200, {
-    'Set-Cookie': 'mycookie=test',
-    'Content-Type': 'text/plain'
-  });
-  res.end('Hello World\n');
+	console.log(JSON.stringify(res.cookie));
+	 res.writeHead(200, {
+	    'Set-Cookie': 'mycookie=test',
+	    'Content-Type': 'text/plain'
+	  });
+	  res.end('Hello World\n');
 
 });
 
@@ -77,9 +80,9 @@ app.post('/crawl', function(req, res) {
 
 if(searchType == 'BFS'){
 	searchDS = new Queue();
-//var startUrl = "http://web.engr.oregonstate.edu/~grubbm/search.html";
-//var MAX_PAGES = 100;
-//var pagesVisited = 0;
+	//var startUrl = "http://web.engr.oregonstate.edu/~grubbm/search.html";
+	//var MAX_PAGES = 100;
+	//var pagesVisited = 0;
 
 	searchDS.Enqueue(startUrl);
 	lambdaCrawlerBFS(res); 
@@ -100,8 +103,6 @@ else if(searchType == 'DFS'){
 */
 
 app.get('/crawlHold', function(req, res) {
-
-
 	res.send();
 });
 
@@ -119,23 +120,8 @@ app.get('/graph', function(req, res) {
 
 // Start the server
 app.listen(3003, function() {
-	console.log('Server running at http://127.0.0.1:8080/');
+	console.log('Server running at http://127.0.0.1:3003/');
 });
-
-
-
-
-
-
-// Variable to store the post request
-/*
-var startUrl = "http://web.engr.oregonstate.edu/~grubbm/search.html";
-var keywords;
-var SEARCH_WORD = "dollar";
-var searchType = 'BFS';
-var MAX_PAGES = 10;
-var pagesVisited = 0; 
-*/
 
 
 // Accept post reqeusts from the website
@@ -215,40 +201,38 @@ function searchForWord($, word) {
   return false;
 }
 
-/*
-var searchDS; 
-if(searchType == 'BFS'){
-	searchDS = new Queue();
-//var startUrl = "http://web.engr.oregonstate.edu/~grubbm/search.html";
-//var MAX_PAGES = 100;
-//var pagesVisited = 0;
-
-	searchDS.Enqueue(startUrl);
-	lambdaCrawlerBFS();
-}
-else if(searchType == 'DFS'){
-
-	searchDS = []; 
-	searchDS.push(startUrl); 
-	lambdaCrawlerDFS(); 
-
-}
-*/
 
 function lambdaCrawlerBFS(res) {
 	
 	var nextPageBFS = searchDS.Dequeue();
-    	if(pagesVisited >= MAX_PAGES){
-            	console.log("Crawl Complete");
-		res.send(dataHolder.sites);
+
+	if(pagesVisited >= MAX_PAGES){	
+        console.log("Crawl Complete");
+
+		//res.send(dataHolder);
+		res.render('graph', {
+			title : 'Graph',
+			jsonData : JSON.stringify(dataHolder)
+		});
 		pagesVisited = 0; 
-		dataHolder.sites = []; 
-		dataHolder.structLength = [];
+		dataHolder.nodes = []; 
+		dataHolder.links = [];
+		totalLinksFound = 0;
 		return;
-    	}
-    	else{
-            	visitPageBFS(nextPageBFS, res, lambdaCrawlerBFS);
-            	}
+	}
+	else{
+        // Add the current page to the dataHolder
+		siteInfo = {};
+	    siteInfo.URL = nextPageBFS;
+	    siteInfo.depth = pagesVisited;
+	    dataHolder.nodes.push(siteInfo);
+
+	    // Collect the links
+		visitPageBFS(nextPageBFS, res, lambdaCrawlerBFS);
+
+		// Add all found links to dataHolder
+		buildJsonBFS();
+    }
 }
 
 function visitPageBFS(url, res, callback){
@@ -256,29 +240,37 @@ function visitPageBFS(url, res, callback){
 
 	pagesVisited++;
 
-	  console.log("Current page " + url);
-	dataHolder.sites.push(url); 
-  request(url,  function(error, response, body) {
+	console.log("Current page " + url);
+	dataHolder.nodes.push(url); 
+  	request(url,  function(error, response, body) {
 
  	console.log("Status code: " + response.statusCode);
  	if(response.statusCode !== 200) {
-   	callback(res);
-   	return;
+	   	callback(res);
+	   	return;
  	}
+
  	var $ = cheerio.load(body.toLowerCase());
 	var isWordFound = searchForWord($, SEARCH_WORD);
+
 	if(isWordFound) {
-    		 console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-		dataHolder.sites.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-		res.send(dataHolder.sites);
+    	console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
+		dataHolder.nodes.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
+		
+		//res.send(dataHolder);
+		res.render('graph', {
+			title : 'Graph',
+			jsonData : JSON.stringify(dataHolder)
+		});
 		pagesVisited = 0; 
-		dataHolder.sites = []; 
-		dataHolder.structLength = [];
+		dataHolder.nodes = []; 
+		dataHolder.links = [];
+		totalLinksFound = 0;
 
 	} 
 	else{ 
 		collectInternalLinksBFS($);
-   	callback(res);
+   		callback(res);
 	}
 	
     });
@@ -287,8 +279,11 @@ function visitPageBFS(url, res, callback){
 function collectInternalLinksBFS($) {
 
     var absoluteLinksBFS = $("a[href^='http']");
+    numLinksFound = 0;
     absoluteLinksBFS.each(function() {
 	    searchDS.Enqueue($(this).attr('href'));
+	    numLinksFound++;
+	    totalLinksFound++;
     });
     console.log("size of gQ: " + searchDS.GetCount());
 }
@@ -296,20 +291,36 @@ function collectInternalLinksBFS($) {
 
 function lambdaCrawlerDFS(res) {
 
-    	var nextPageDFS = searchDS.pop();
-	dataHolder.sites.push(nextPageDFS); 		 
-    	if(pagesVisited >= MAX_PAGES){
-            	console.log("Crawl Complete");
-		res.send(dataHolder.sites);
-		pagesVisited = 0; 
-		dataHolder.sites = []; 
-		dataHolder.structLength = [];
+    var nextPageDFS = searchDS.pop();
 
-            	return;
-    	}
-    	else{
-            	visitPageDFS(nextPageDFS, res,  lambdaCrawlerDFS);
-            	}
+    if(pagesVisited >= MAX_PAGES){
+
+        console.log("Crawl Complete");
+		//res.send(dataHolder);
+		res.render('graph', {
+			title : 'Graph',
+			jsonData : JSON.stringify(dataHolder)
+		});
+		pagesVisited = 0; 
+		dataHolder.nodes = []; 
+		dataHolder.links = [];
+		totalLinksFound = 0;
+
+        return;
+	}
+	else{
+    	// Add the current page to the data holder.
+    	siteInfo = {};
+	    siteInfo.URL = nextPageDFS;
+	    siteInfo.depth = pagesVisited;
+	    dataHolder.nodes.push(siteInfo);
+
+	    // Get the links on page
+        visitPageDFS(nextPageDFS, res,  lambdaCrawlerDFS);
+
+        // Add links found on page and connections
+        buildJsonDFS();
+    }
 }
 
 function visitPageDFS(url, res, callback){
@@ -317,28 +328,36 @@ function visitPageDFS(url, res, callback){
 
 	pagesVisited++;
 
-  console.log("Current page " + url);
- request(url, function(error, response, body) {
+	console.log("Current page " + url);
+	request(url, function(error, response, body) {
 
- 	console.log("Status code: " + response.statusCode);
- 	if(response.statusCode !== 200) {
-   	callback(res);
-   	return;
- 	}
- 	var $ = cheerio.load(body.toLowerCase());
-	var isWordFound = searchForWord($, SEARCH_WORD);
-	if(isWordFound) {
-     			console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-			dataHolder.sites.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-			res.send(dataHolder.sites);
+	 	console.log("Status code: " + response.statusCode);
+
+	 	if(response.statusCode !== 200) {
+		   	callback(res);
+		   	return;
+	 	}
+
+	 	var $ = cheerio.load(body.toLowerCase());
+		var isWordFound = searchForWord($, SEARCH_WORD);
+
+		if(isWordFound) {
+	 		console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
+			dataHolder.nodes.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
+			//res.send(dataHolder);
+			res.render('graph', {
+				title : 'Graph',
+				jsonData : JSON.stringify(dataHolder)
+			});
 			pagesVisited = 0; 
-			dataHolder.sites = []; 
-			dataHolder.structLength = [];
-	} 
-	else{ 
-	collectInternalLinksDFS($);
-   	callback(res);
-	}
+			dataHolder.nodes = []; 
+			dataHolder.links = [];
+			totalLinksFound = 0;
+		} 
+		else{ 
+			collectInternalLinksDFS($);
+		   	callback(res);
+		}
 	
     });
 }
@@ -346,8 +365,70 @@ function visitPageDFS(url, res, callback){
 function collectInternalLinksDFS($) {
 
     var absoluteLinksDFS = $("a[href^='http']");
+    numLinksFound = 0;
     absoluteLinksDFS.each(function() {
 	    searchDS.push($(this).attr('href'));
+	    numLinksFound++;
+	    totalLinksFound++;
 	    //pagesToVisit.push($(this).attr('href'));
     });
+}
+
+
+function buildJsonDFS() {
+	var curSite;
+	var counter = 0;
+
+	// Get all URLS found on current page
+	for (i = (searchDS.length - numLinksFound); i < searchDS.length; i++) {
+		// Add website and link to dataHolder to each
+		counter++;
+		siteInfo = {};
+		linkInfo = {};
+		curSite = searchDS[i];
+		siteInfo.URL = curSite;
+		siteInfo.depth = pagesVisited;
+		dataHolder.nodes.push(siteInfo);
+
+		// Add a link from each url to the current page
+		linkInfo.source = pagesVisited;
+		linkInfo.target = pagesVisited + counter;
+		dataHolder.links.push(linkInfo);
+	}
+
+}
+
+function buildJsonBFS() {
+	var curSite;
+	var counter = 0;
+	var currentNode;
+
+	// Add all the newly added links to dataHolder
+	for(i = 0; i < numLinksFound; i++) {
+		// Vars
+		counter++;
+		siteInfo = {};
+		linkInfo = {};
+
+		// Start at the last added link
+		currentNode = searchDS.GetHead();
+
+		// Get the url and add it to the dataHolder
+		if(currentNode != null) {
+			siteInfo.URL = currentNode.data;
+			siteInfo.depth = pagesVisited;
+			dataHolder.nodes.push(siteInfo);
+
+			// Add a link from url to current page
+			linkInfo.source = pagesVisited;
+			linkInfo.target = pagesVisited + counter;
+			dataHolder.links.push(linkInfo);
+
+			// Go to next link in queue
+			correntNode = currentNode.next;
+		}
+		
+	}
+
+
 }
