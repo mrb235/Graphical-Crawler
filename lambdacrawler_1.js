@@ -27,6 +27,7 @@ var numLinksFound = 0;
 var totalLinksFound = 0;
 var nodeToLink;
 var errorMsg = false;
+var badUrl = "";
 
 
 app.engine('handlebars', exphbs({defaultLayout: 'main'}));

@@ -59,6 +59,8 @@ html {
 
 body {
   margin: 0;
+  background-image: url(/pattern.svg);
+  background-size: cover;
 }
 
 a:focus {

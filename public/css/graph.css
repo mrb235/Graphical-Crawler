@@ -18,3 +18,7 @@
 .graph-node {
   z-index: -1;
 }
+
+#graph {
+    opacity: 0.8;
+}
