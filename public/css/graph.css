@@ -1,7 +1,25 @@
+#graph {
+    outline: 2px solid black;
+    margin-top: 10px;
+}
+
 .graph-link {
-  fill: none;
-  stroke: #999;
-  stroke-opacity: .6;
+    fill: none;
+    stroke: #999;
+    stroke-opacity: .6;
+}
+
+.direct-link {
+    stroke-width: 2;
+    stroke-opacity: .9;
+}
+
+.graph-arrow {
+    fill: none;
+}
+
+.direct-arrow {
+    stroke-width: 1.5;
 }
 
 .graph-tooltip {	
@@ -16,5 +34,17 @@
 }
 
 .graph-node {
-  z-index: -1;
+    z-index: -1;
+}
+
+#circle {
+    border-radius: 50%;
+    width: 10px;
+    height: 10px; 
+    background: red;
+    display: inline-block;
+}
+
+#notes {
+    font-size: smaller;
 }

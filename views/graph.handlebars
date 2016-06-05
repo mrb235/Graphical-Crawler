@@ -3,7 +3,33 @@
 	<p>{{errorMsg}}</p>
 	<a href='/'>Try a different url</a>
 {{/if}}
+
+{{#unless errorMsg}}
 	<div id="graph" data-json-data="{{jsonData}}"></div>
+	<br>
+	
+	<table id='notes'>
+		{{#if foundKeyword}}
+			<tr>
+				<td><span>Found Keyword "{{foundKeyword}}" at: <div id='circle'></div></span></td>
+				<td></td>
+			</tr>
+		{{/if}}
+		<tr>
+			<td>Zoom in and out of graph by scrolling.</td>
+		<tr/>
+		<tr>
+			<td>It will zoom in and out based on the postion of your cursor.</td>
+		<tr/>
+		<tr>
+			<td>You can drag the graph around as well.</td>
+		<tr/>
+		<tr>
+			<td>Darker lines are to 'direct' children of a given page.</td>
+		</tr>
+	</table>
+	
 
 	<script src="/D3/d3.min.js"></script>
 	<script src="/graph-scripts/graph.js"></script>
+{{/unless}}

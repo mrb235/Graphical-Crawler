@@ -16,7 +16,8 @@ var app	= express();
 var dataHolder = {};
 dataHolder.nodes = []; 
 dataHolder.links = [];
-dataHolder.keywordFoundUrl = undefined;
+dataHolder.keywordFoundUrl = '1';
+var foundKeyword = false;
 var searchDS; 
 var startUrl;
 var SEARCH_WORD;
@@ -27,6 +28,7 @@ var numLinksFound = 0;
 var totalLinksFound = 0;
 var nodeToLink;
 var errorMsg = false;
+var badUrl = "";
 
 
 app.engine('handlebars', exphbs({defaultLayout: 'main'}));
@@ -98,11 +100,6 @@ app.post('/crawl', function(req, res) {
 
 
 });
-
-/*app.get('/crawl', function(req, res) {
-	res.render('crawl');
-});
-*/
 
 app.get('/crawlHold', function(req, res) {
 	res.send();
@@ -253,6 +250,7 @@ function visitPage(urlObj, res, callback){
 
 		if(isWordFound) {
 			dataHolder.keywordFoundUrl = urlObj.URL;
+			foundKeyword = SEARCH_WORD;
 			renderGraph(res);
 		} 
 		else{ 
@@ -304,10 +302,12 @@ function renderGraph(res) {
 	if(dataHolder.nodes.length == 0) {
 		sendError = errorMsg;
 	}
+	dataHolder.searchType = searchType;
 	res.render('graph', {
 		title : 'Graph',
 		jsonData : JSON.stringify(dataHolder),
 		errorMsg : sendError,
+		foundKeyword : foundKeyword,
 		badUrl : badUrl
 	});
 	pagesVisited = 0; 
