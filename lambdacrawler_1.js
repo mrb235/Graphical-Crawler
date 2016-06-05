@@ -8,6 +8,7 @@ var server = require('http').createServer(app);
 var request = require('request');
 var events = require('events').EventEmitter.prototype._maxListeners = 100;
 var cheerio = require('cheerio');
+const url = require('url');
 
 
 var app	= express();
@@ -15,15 +16,17 @@ var app	= express();
 var dataHolder = {};
 dataHolder.nodes = []; 
 dataHolder.links = [];
+dataHolder.keywordFoundUrl = undefined;
 var searchDS; 
 var startUrl;
 var SEARCH_WORD;
 var searchType;
-var MAX_PAGES;
+var MAX_DEPTH;
 var pagesVisited = 0;
 var numLinksFound = 0;
 var totalLinksFound = 0;
 var nodeToLink;
+var errorMsg = false;
 
 
 app.engine('handlebars', exphbs({defaultLayout: 'main'}));
@@ -74,25 +77,24 @@ app.post('/crawl', function(req, res) {
 	 startUrl = req.body.starturl;
 	 SEARCH_WORD = req.body.keywords;
 	 searchType = req.body.searchType;
-	 MAX_PAGES = req.body.depth;
+	 MAX_DEPTH = req.body.depth;
 
-//  res.end('Hello World\n');
+	//  res.end('Hello World\n');
+	
+	//add the initial root node to the dataholder object
+	createRootNode(startUrl);
 
-if(searchType == 'BFS'){
-	searchDS = new Queue();
-	//var startUrl = "http://web.engr.oregonstate.edu/~grubbm/search.html";
-	//var MAX_PAGES = 100;
-	//var pagesVisited = 0;
+	if(searchType == 'BFS'){
+		searchDS = new Queue();
+		searchDS.Enqueue(dataHolder.nodes[0]);
+		lambdaCrawler(res); 
+	}
+	else if(searchType == 'DFS'){
 
-	searchDS.Enqueue(startUrl);
-	lambdaCrawlerBFS(res); 
-}
-else if(searchType == 'DFS'){
-
-	searchDS = []; 
-	searchDS.push(startUrl); 
-	lambdaCrawlerDFS(res); 
-}
+		searchDS = []; 
+		searchDS.push(dataHolder.nodes[0]); 
+		lambdaCrawler(res); 
+	}
 
 
 });
@@ -164,7 +166,7 @@ function Queue(){
 
 	this.Dequeue = function () {
 		if (count === 0) {
-	    	return;
+	    	return 'empty';
 		}
 		else {
 	    	var dq = tail.data;
@@ -194,241 +196,240 @@ function Queue(){
 }
 
 function searchForWord($, word) {
-  var bodyText = $('html > body').text();
-  if(bodyText.toLowerCase().indexOf(word.toLowerCase()) !== -1) {
-    return true;
-  }
-  return false;
-}
-
-
-function lambdaCrawlerBFS(res) {
-	
-	var nextPageBFS = searchDS.Dequeue();
-
-	if(pagesVisited >= MAX_PAGES){	
-        console.log("Crawl Complete");
-
-		//res.send(dataHolder);
-		res.render('graph', {
-			title : 'Graph',
-			jsonData : JSON.stringify(dataHolder)
-		});
-		pagesVisited = 0; 
-		dataHolder.nodes = []; 
-		dataHolder.links = [];
-		totalLinksFound = 0;
-		return;
+	if(word.trim().length < 1) {
+		return false;
 	}
-	else{
-        // Add the current page to the dataHolder
-		siteInfo = {};
-	    siteInfo.URL = nextPageBFS;
-	    siteInfo.depth = pagesVisited;
-	    dataHolder.nodes.push(siteInfo);
-
-	    // Collect the links
-		visitPageBFS(nextPageBFS, res, lambdaCrawlerBFS);
-
-		// Add all found links to dataHolder
-		buildJsonBFS();
-    }
+  	var bodyText = $('html > body').text();
+  	if(bodyText.toLowerCase().indexOf(word.toLowerCase()) !== -1) {
+    	return true;
+  	}
+  	return false;
 }
 
-function visitPageBFS(url, res, callback){
 
+function lambdaCrawler(res) {
 
-	pagesVisited++;
-
-	console.log("Current page " + url);
-	dataHolder.nodes.push(url); 
-  	request(url,  function(error, response, body) {
-
- 	console.log("Status code: " + response.statusCode);
- 	if(response.statusCode !== 200) {
-	   	callback(res);
-	   	return;
- 	}
-
- 	var $ = cheerio.load(body.toLowerCase());
-	var isWordFound = searchForWord($, SEARCH_WORD);
-
-	if(isWordFound) {
-    	console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-		dataHolder.nodes.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-		
-		//res.send(dataHolder);
-		res.render('graph', {
-			title : 'Graph',
-			jsonData : JSON.stringify(dataHolder)
-		});
-		pagesVisited = 0; 
-		dataHolder.nodes = []; 
-		dataHolder.links = [];
-		totalLinksFound = 0;
-
-	} 
-	else{ 
-		collectInternalLinksBFS($);
-   		callback(res);
+	if(searchType == 'DFS') {
+	    var nextPage = searchDS.pop();
+	} else {
+		var nextPage = searchDS.Dequeue();
 	}
-	
-    });
-}
 
-function collectInternalLinksBFS($) {
-
-    var absoluteLinksBFS = $("a[href^='http']");
-    numLinksFound = 0;
-    absoluteLinksBFS.each(function() {
-	    searchDS.Enqueue($(this).attr('href'));
-	    numLinksFound++;
-	    totalLinksFound++;
-    });
-    console.log("size of gQ: " + searchDS.GetCount());
-}
-
-
-function lambdaCrawlerDFS(res) {
-
-    var nextPageDFS = searchDS.pop();
-
-    if(pagesVisited >= MAX_PAGES){
+    if(pagesVisited >= MAX_DEPTH || nextPage === 'empty') {
 
         console.log("Crawl Complete");
-		//res.send(dataHolder);
-		res.render('graph', {
-			title : 'Graph',
-			jsonData : JSON.stringify(dataHolder)
-		});
-		pagesVisited = 0; 
-		dataHolder.nodes = []; 
-		dataHolder.links = [];
-		totalLinksFound = 0;
-
+		renderGraph(res);
         return;
-	}
-	else{
-    	// Add the current page to the data holder.
-    	siteInfo = {};
-	    siteInfo.URL = nextPageDFS;
-	    siteInfo.depth = pagesVisited;
-	    dataHolder.nodes.push(siteInfo);
-
-	    // Get the links on page
-        visitPageDFS(nextPageDFS, res,  lambdaCrawlerDFS);
-
-        // Add links found on page and connections
-        buildJsonDFS();
+	} else if ( nextPage !== undefined && Object.keys(nextPage).length) {
+		visitPage(nextPage, res, lambdaCrawler);
+	} else {
+		//This should only happen if nextPage is empty
+		console.log("Invalid URL");
+		renderGraph(res);
     }
 }
 
-function visitPageDFS(url, res, callback){
+function visitPage(urlObj, res, callback){
 
+	console.log("Current page " + urlObj.URL);
+	request(urlObj.URL, function(error, response, body) {
 
-	pagesVisited++;
-
-	console.log("Current page " + url);
-	request(url, function(error, response, body) {
-
-	 	console.log("Status code: " + response.statusCode);
-
-	 	if(response.statusCode !== 200) {
+		if(error) {
+			console.log('Error from URL: ' + error);
+			errorMsg = "Error Message: " + error;
+			badUrl = urlObj.URL;
+			callback(res);
+			return;
+		} else if(response.statusCode !== 200) {
+	 		console.log("Status code: " + response.statusCode);
 		   	callback(res);
 		   	return;
 	 	}
+	 	pagesVisited++;
+	 	urlObj.visited = true;
 
 	 	var $ = cheerio.load(body.toLowerCase());
 		var isWordFound = searchForWord($, SEARCH_WORD);
 
 		if(isWordFound) {
-	 		console.log('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-			dataHolder.nodes.push('Crawler found ' + SEARCH_WORD + ' at page ' + url);
-			//res.send(dataHolder);
-			res.render('graph', {
-				title : 'Graph',
-				jsonData : JSON.stringify(dataHolder)
-			});
-			pagesVisited = 0; 
-			dataHolder.nodes = []; 
-			dataHolder.links = [];
-			totalLinksFound = 0;
+			dataHolder.keywordFoundUrl = urlObj.URL;
+			renderGraph(res);
 		} 
 		else{ 
-			collectInternalLinksDFS($);
+			collectInternalLinks($, urlObj.URL);
 		   	callback(res);
 		}
-	
     });
 }
 
-function collectInternalLinksDFS($) {
+function collectInternalLinks($, currentUrl) {
 
-    var absoluteLinksDFS = $("a[href^='http']");
+    var absoluteLinks = $("a[href^='http']");
+    var relativeLinks = $("a[href^='/']");
+
+    //filter unique links
+    var tempArr = [];
+    absoluteLinks.each(function() {
+    	tempArr.push($(this).attr('href'));
+    });
+    relativeLinks.each(function() {
+    	var absoluteUrl = url.resolve(currentUrl, $(this).attr('href'));
+    	tempArr.push(absoluteUrl);
+    });
+    uniqueLinks = uniq(tempArr);
+
     numLinksFound = 0;
-    absoluteLinksDFS.each(function() {
-	    searchDS.push($(this).attr('href'));
+    for (var i = uniqueLinks.length - 1; i >= 0; i--) {
+
 	    numLinksFound++;
 	    totalLinksFound++;
-	    //pagesToVisit.push($(this).attr('href'));
-    });
+    	var newNode = addNodeLink(currentUrl, uniqueLinks[i]);
+
+    	if(newNode) {
+    		if(searchType == 'DFS') {
+    			searchDS.push(newNode);
+	    	} else {
+	    		searchDS.Enqueue(newNode);
+	    	}
+	    }
+    }
 }
 
+//Should be called once the crawl is complete
+//pass dataholder to the graph
+function renderGraph(res) {
+	var sendError = 0;
 
-function buildJsonDFS() {
-	var curSite;
-	var counter = 0;
-
-	// Get all URLS found on current page
-	for (i = (searchDS.length - numLinksFound); i < searchDS.length; i++) {
-		// Add website and link to dataHolder to each
-		counter++;
-		siteInfo = {};
-		linkInfo = {};
-		curSite = searchDS[i];
-		siteInfo.URL = curSite;
-		siteInfo.depth = pagesVisited;
-		dataHolder.nodes.push(siteInfo);
-
-		// Add a link from each url to the current page
-		linkInfo.source = pagesVisited;
-		linkInfo.target = pagesVisited + counter;
-		dataHolder.links.push(linkInfo);
+	removeUnusedData();
+	if(dataHolder.nodes.length == 0) {
+		sendError = errorMsg;
 	}
-
+	res.render('graph', {
+		title : 'Graph',
+		jsonData : JSON.stringify(dataHolder),
+		errorMsg : sendError,
+		badUrl : badUrl
+	});
+	pagesVisited = 0; 
+	dataHolder.nodes = []; 
+	dataHolder.links = [];
+	totalLinksFound = 0;
 }
 
-function buildJsonBFS() {
-	var curSite;
-	var counter = 0;
-	var currentNode;
+function removeUnusedData() {
+	var tempNodes = [];
+	var tempLinks = [];
 
-	// Add all the newly added links to dataHolder
-	for(i = 0; i < numLinksFound; i++) {
-		// Vars
-		counter++;
-		siteInfo = {};
-		linkInfo = {};
-
-		// Start at the last added link
-		currentNode = searchDS.GetHead();
-
-		// Get the url and add it to the dataHolder
-		if(currentNode != null) {
-			siteInfo.URL = currentNode.data;
-			siteInfo.depth = pagesVisited;
-			dataHolder.nodes.push(siteInfo);
-
-			// Add a link from url to current page
-			linkInfo.source = pagesVisited;
-			linkInfo.target = pagesVisited + counter;
-			dataHolder.links.push(linkInfo);
-
-			// Go to next link in queue
-			correntNode = currentNode.next;
+	//find nodes that were visited
+	for (var i = 0; i < dataHolder.nodes.length; i++) {
+		var tempNode = dataHolder.nodes[i];
+		if(tempNode.visited) {
+			tempNode.oldIndex = i;
+			tempNodes.push(tempNode);
 		}
-		
 	}
 
+	//find links that are still relevant
+	//remove links to old nodes
+	for (var i = 0; i < dataHolder.links.length; i++) {
+		var tempLink = dataHolder.links[i];
+		var foundTarget = false
+		var foundSource = false;
+		for (var j = tempNodes.length - 1; j >= 0; j--) {
+			if(tempNodes[j].oldIndex == tempLink.target) {
+				foundTarget = j;
+			}
+			if(tempNodes[j].oldIndex == tempLink.source) {
+				foundSource = j;
+			}
+		}
+		if(foundSource !== false && foundTarget !== false) {
+			tempLinks.push(createLink(foundSource, foundTarget));
+		}
+	}
+	dataHolder.nodes = tempNodes;
+	dataHolder.links = tempLinks;
+}
 
+//Should only be called once
+//This will take the start node and append it to the nodes array with the depth of 0
+//The root node will always be the only node with a depth of 0
+function createRootNode(startUrl) {
+	dataHolder.nodes.push(createNode(startUrl, 0));
+}
+
+//function for creating a node
+//accepts url and depth
+//returns a fully formed node object
+function createNode(newurl, depth) {
+	var nodeUrlObj = url.parse(newurl);
+	var node = {};
+	node.URL = newurl;
+	node.URLnoProtocol = (url.format(nodeUrlObj)).replace(nodeUrlObj.protocol, '');
+	node.depth = depth;
+	node.visited = false;
+	return node;
+}
+
+//accepts current index and next index
+//returns created link object
+function createLink(currentIndex, nextIndex) {
+	var link = {};
+	link.source = currentIndex;
+	link.target = nextIndex;
+	return link;
+}
+
+//take a currentUrl and a url it links to  
+//create a new node(if necessary) for the nextUrl
+//create a link between them
+//return newNode if it was a new node, and false if the node already existed
+function addNodeLink(currentUrl, nextUrl) {
+	var currentIndex = getNodeIndex(currentUrl);
+	var currentObj = dataHolder.nodes[currentIndex];
+
+	nextUrlIndexSearch = getNodeIndex(nextUrl);
+
+	if(nextUrlIndexSearch === -1) {
+		nextObj = createNode(nextUrl, currentObj.depth + 1);
+		nextIndex = dataHolder.nodes.push(nextObj) - 1;
+	} else {
+		nextIndex = nextUrlIndexSearch;
+		nextObj = false;
+	}
+	if(nextIndex != currentIndex){
+		dataHolder.links.push(createLink(currentIndex, nextIndex));
+	}
+	return nextObj;
+}
+
+//get index of a given node in the dataHolder.nodes array
+//Only call this if you can reasonably know the element exists in the array
+function getNodeIndex(testurl) {
+	var nodeUrlObj = url.parse(testurl);
+	var urlNoProtocol = (url.format(nodeUrlObj)).replace(nodeUrlObj.protocol, '');
+	for (var i = dataHolder.nodes.length - 1; i >= 0; i--) {
+		var element = dataHolder.nodes[i];
+		if(urlNoProtocol == element.URLnoProtocol) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+//If a node is successfully visited, flip it's visited bit to true
+function visitedNode(url) {
+	var nodeIndex = getNodeIndex(url);
+	var node = dataHolder.nodes[nodeIndex];
+	node.visited = true;
+}
+
+//http://stackoverflow.com/questions/9229645/remove-duplicates-from-javascript-array
+//take array of strings and return array of unique strings.
+//This will be used when going over links on a single page.  I only care about unique links on a page.
+function uniq(a) {
+    var seen = {};
+    return a.filter(function(item) {
+        return seen.hasOwnProperty(item) ? false : (seen[item] = true);
+    });
 }

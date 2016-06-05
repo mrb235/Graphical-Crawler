@@ -1,4 +1,9 @@
-<div id="graph" data-json-data="{{jsonData}}"></div>
+{{#if errorMsg}}
+	<p>Received error when attempting to connect to {{badUrl}}</p>
+	<p>{{errorMsg}}</p>
+	<a href='/'>Try a different url</a>
+{{/if}}
+	<div id="graph" data-json-data="{{jsonData}}"></div>
 
-<script src="/D3/d3.min.js"></script>
-<script src="/graph-scripts/graph.js"></script>
+	<script src="/D3/d3.min.js"></script>
+	<script src="/graph-scripts/graph.js"></script>

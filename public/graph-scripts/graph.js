@@ -11,14 +11,10 @@ var svg = d3.select("#graph").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-// var force = d3.layout.force()
-//     .charge(-200)
-//     .linkDistance(circleRadius)
-//     .size([width, height]);
-
 //get data from json file and figure out depth and associated children for each node
 var jsonData = document.getElementById('graph');
 var graph = JSON.parse(jsonData.getAttribute('data-json-data'));
+console.log(graph);
 setDepthInfo(graph);
 setTotalWeight(graph);
 
@@ -45,16 +41,6 @@ var tooltip = d3.select('body').append('div')
 
 //calculate the positions of all the links and nodes
 setChildren(graph, nodes, links);
-
-// links.enter()
-//     .append("line")
-//     .attr("class", "graph-link")
-//     .style("stroke-width", 1.5)
-//     .attr("x1", function(link) {return link.x1})
-//     .attr("y1", function(link) {return link.y1})
-//     .attr("x2", function(link) {return link.x2})
-//     .attr("y2", function(link) {return link.y2})
-//     ;
 
 nodes.enter()
     .append("circle")
@@ -101,28 +87,7 @@ console.log(graph);
 console.log(nodes);
 console.log(links);
 
-// createInitialGraph(graph);
-
 setMouseover(nodes);
-
-// force
-//     .nodes(graph.nodes)
-//     .links(graph.links)
-//     .start();
-
-// force.on("tick", function() {
-//   link.attr("x1", function(node) { return node.source.x; })
-//       .attr("y1", function(node) { return node.source.y; })
-//       .attr("x2", function(node) { return node.target.x; })
-//       .attr("y2", function(node) { return node.target.y; });
-
-//   node.attr("cx", function(node) { return node.x; })
-//       .attr("cy", function(node) { return node.y; });
-// });
-
-// function setcx(node) {
-//     if()
-// }
 
 function setChildren(graph,nodes,links) {
     graph.links.forEach(function(link, linkIndex) {
@@ -170,7 +135,7 @@ function addDirectChild(parent, child) {
 function setWeight(node) {
     //Only nodes at the edge with no children require this
     //All others will be hit later
-    if(node.childNodes === undefined) {
+    if(node.directChildren === undefined) {
         node.weight = 1;
     }
     //2 because this counts the parent itself and the node
@@ -195,7 +160,7 @@ function setInitialLocationWrapper(graph) {
 }
 
 function setInitialLocation(node, nodeIndex, graph) {
-    if(node.depth == 1) {
+    if(node.depth == 0) {
         setRootVars(node);
     } else {
         setLocation(node, graph);
@@ -209,6 +174,7 @@ function setChildCircle(node, graph) {
     var numKids = node.directChildren.length;
     var step = (node.endAngle - node.startAngle) / (node.weight - 1);
     var tempAngle = node.startAngle;
+    console.log('step: '+step);
 
     node.directChildren.forEach(function(child) {
         child.startAngle = tempAngle;
@@ -216,6 +182,7 @@ function setChildCircle(node, graph) {
         child.angle = (child.startAngle + child.endAngle) / 2;
         tempAngle = child.endAngle;
         child.radius = (node.radius * 1.25) + circleRadius;
+        console.log(child);
     });
 }
 
@@ -252,7 +219,7 @@ function setMouseover(nodes) {
         tooltip.transition().duration(100)
             .style('opacity', .9);
         tooltip.attr('data-url', node.URL)
-            .html(function(d) { return "<a href='"+this.dataset.url+"'>"+this.dataset.url+"</a>";})
+            .html(function(d) { return "<a href='"+this.dataset.url.trim()+"'>"+this.dataset.url.trim()+"</a>";})
             .style('left', ( d3.event.pageX - 35) + 'px')
             .style('top', (d3.event.pageY - 35) + 'px')
         })
@@ -277,7 +244,7 @@ function setDepthInfo(graph) {
         } else {
             graph.depthInfo[node.depth] += 1;
         }
-        if(node.depth == 1) {
+        if(node.depth == 0) {
             graph.root = node;
         }
     });
@@ -285,7 +252,7 @@ function setDepthInfo(graph) {
 
 function setTotalWeight(graph) {
     graph.totalWeight = [];
-    for (var i = 1; i < graph.depthInfo.length; i++) {
+    for (var i = 0; i < graph.depthInfo.length; i++) {
         graph.totalWeight[i] = 0;
         for (var j = i; j < graph.depthInfo.length; j++) {
             graph.totalWeight[i] += graph.depthInfo[j];
