@@ -1,3 +1,13 @@
+/************************************************
+Title: lambdacrawler_1.js
+Authors: Max Grubb, Mark Rushmere, Matthew Boal
+Description: Web server implemenation of graphical
+webcrawler. 
+Date: 6/6/2016
+**************************************************/
+
+
+
 var express = require('express');
 var async = require('async');
 var exphbs = require('express-handlebars');
