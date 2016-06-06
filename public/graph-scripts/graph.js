@@ -21,7 +21,7 @@ graphDiv.style.height = height + 'px';
 //get data from json file and figure out depth and associated children for each node
 var jsonData = document.getElementById('graph');
 var graph = JSON.parse(jsonData.getAttribute('data-json-data'));
-console.log(graph);
+// console.log(graph);
 setDepthInfo(graph);
 setTotalWeight(graph);
 
@@ -128,9 +128,9 @@ arrows.enter()
             link.y2;
     });
 
-console.log(graph);
-console.log(nodes);
-console.log(links);
+// console.log(graph);
+// console.log(nodes);
+// console.log(links);
 
 setMouseover(nodes);
 setClick(nodes, graph);
@@ -236,13 +236,13 @@ function setChildCircle(node, graph) {
     var step = (node.endAngle - node.startAngle) / (node.weight - 1);
     var tempAngle = node.startAngle;
     var circleRadius = setCircleRadius(node, graph);
-    console.log('step: '+step);
+    // console.log('step: '+step);
 
     node.directChildren.forEach(function(child, index) {
         child = setChildAngles(tempAngle, step, child, graph.searchType);
         tempAngle = child.endAngle;
         child.radius = setChildRadius(node, circleRadius, graph.searchType, index);
-        console.log(child);
+        // console.log(child);
     });
 }
 
