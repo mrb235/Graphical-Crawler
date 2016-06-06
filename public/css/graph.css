@@ -14,6 +14,11 @@
     stroke-opacity: .9;
 }
 
+.highlighted-link {
+    stroke: red;
+    stroke-width: 3;
+}
+
 .graph-arrow {
     fill: none;
 }

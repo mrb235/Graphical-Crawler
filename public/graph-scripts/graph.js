@@ -91,9 +91,9 @@ links.enter()
     .append('svg:path')
     .attr('class', function(link) {
         if(link.directLink) {
-            return "graph-link direct-link";
+            return "target"+link.target+" source"+link.source+" graph-link direct-link";
         }
-        return "graph-link";
+        return "target"+link.target+" source"+link.source+" graph-link";
     })
     .attr("d", function(link) {
         var dx = link.x2 - link.x1,
@@ -133,6 +133,7 @@ console.log(nodes);
 console.log(links);
 
 setMouseover(nodes);
+setClick(nodes, graph);
 
 function setChildren(graph,nodes,links) {
     graph.links.forEach(function(link, linkIndex) {
@@ -273,7 +274,7 @@ function setChildAngles(tempAngle, step, child, searchType) {
 
 function setChildRadius(node, circleRadius, searchType, index) {
     if(searchType == 'DFS') {
-        return (node.radius * .95) + circleRadius;
+        return (node.radius) + circleRadius;
     } else {
         return (node.radius * 1.25) + circleRadius;
     }
@@ -317,6 +318,27 @@ function setMouseover(nodes) {
             .style('top', (d3.event.pageY - 35) + 'px')
         })
         .on('mouseout', function(node) { tooltipMouseOut(); });
+}
+
+function setClick(nodes, graph) {
+    nodes.on('click', function(node) {
+        highlightLinks(node.index, graph);
+    })
+}
+
+function highlightLinks(index, graph) {
+    var highlightedLinks = document.getElementsByClassName("highlighted-link");
+
+    if(highlightedLinks.length == 0) {
+        var sourceLinks = document.getElementsByClassName("source"+index);
+        for (var i = sourceLinks.length - 1; i >= 0; i--) {
+            sourceLinks[i].classList.add("highlighted-link");
+        }
+    } else {
+        for (var i = highlightedLinks.length - 1; i >= 0; i--) {
+            highlightedLinks[i].classList.remove("highlighted-link");
+        }
+    }
 }
 
 function tooltipMouseOut() {

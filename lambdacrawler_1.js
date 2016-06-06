@@ -229,35 +229,47 @@ function lambdaCrawler(res) {
 function visitPage(urlObj, res, callback){
 
 	console.log("Current page " + urlObj.URL);
-	request(urlObj.URL, function(error, response, body) {
+	try {
+		request({
+				uri: urlObj.URL,
+				method: "GET",
+				timeout: 5000,
+				followRedirect: true,
+				maxRedirects:10
+			}
+			, function(error, response, body) {
 
-		if(error) {
-			console.log('Error from URL: ' + error);
-			errorMsg = "Error Message: " + error;
-			badUrl = urlObj.URL;
-			callback(res);
-			return;
-		} else if(response.statusCode !== 200) {
-	 		console.log("Status code: " + response.statusCode);
-		   	callback(res);
-		   	return;
-	 	}
-	 	pagesVisited++;
-	 	urlObj.visited = true;
+			if(error) {
+				console.log('Error from URL: ' + error);
+				errorMsg = "Error Message: " + error;
+				badUrl = urlObj.URL;
+				callback(res);
+				return;
+			} else if(response.statusCode !== 200) {
+		 		console.log("Status code: " + response.statusCode);
+			   	callback(res);
+			   	return;
+		 	}
+		 	pagesVisited++;
+		 	urlObj.visited = true;
 
-	 	var $ = cheerio.load(body.toLowerCase());
-		var isWordFound = searchForWord($, SEARCH_WORD);
+		 	var $ = cheerio.load(body.toLowerCase());
+			var isWordFound = searchForWord($, SEARCH_WORD);
 
-		if(isWordFound) {
-			dataHolder.keywordFoundUrl = urlObj.URL;
-			foundKeyword = SEARCH_WORD;
-			renderGraph(res);
-		} 
-		else{ 
-			collectInternalLinks($, urlObj.URL);
-		   	callback(res);
-		}
-    });
+			if(isWordFound) {
+				dataHolder.keywordFoundUrl = urlObj.URL;
+				foundKeyword = SEARCH_WORD;
+				renderGraph(res);
+			} 
+			else{ 
+				collectInternalLinks($, urlObj.URL);
+			   	callback(res);
+			}
+	    });
+	} catch (e) {
+		console.log(e);
+		callback(res);
+	}
 }
 
 function collectInternalLinks($, currentUrl) {
