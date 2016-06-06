@@ -49,12 +49,12 @@ app.get('/', function(req, res) {
 	});
 });
 
+/*
 app.get('/ck', function(req, res){
 
 
 	var list = {},
 
-	/*internal listing of cookies -- to console.log*/
 
 	rc = req.headers.cookie;
 
@@ -74,6 +74,7 @@ app.get('/ck', function(req, res){
 	  res.end('Hello World\n');
 
 });
+*/
 
 app.post('/crawl', function(req, res) {
 	 startUrl = req.body.starturl;
@@ -81,10 +82,14 @@ app.post('/crawl', function(req, res) {
 	 searchType = req.body.searchType;
 	 MAX_DEPTH = req.body.depth;
 
-	//  res.end('Hello World\n');
 	
 	//add the initial root node to the dataholder object
 	createRootNode(startUrl);
+
+
+/*Check for depth or breadth first search, then begin recursive lambdaCrawler. 
+  the web response is at the bottom of the lambdaCrawler function. '/graph' 
+  will display final results*/
 
 	if(searchType == 'BFS'){
 		searchDS = new Queue();
@@ -109,6 +114,8 @@ app.get('/about', function(req, res) {
 	res.render('about');
 });
 
+/*Final display of results*/
+
 app.get('/graph', function(req, res) {
 	res.render('graph', {
 		title : 'Graph',
@@ -119,7 +126,7 @@ app.get('/graph', function(req, res) {
 
 // Start the server
 app.listen(3003, function() {
-	console.log('Server running at http://127.0.0.1:3003/');
+	console.log('Server running at host:3003/');
 });
 
 
@@ -132,7 +139,7 @@ app.post('/crawlinfo', function(req, res) {
 	res.send('recieved url: ' + startUrl + '.');
 });
 
-
+/*Implementation of Queue Data Structure for Breadth First Search */
 
 function Queue(){
 	var count = 0;
@@ -142,8 +149,6 @@ function Queue(){
 	this.GetCount = function(){
     	return count;
 	}
-
-
 
 	this.Enqueue = function (data) {
 		var node = {
@@ -192,7 +197,8 @@ function Queue(){
 
 }
 
-function searchForWord($, word) {
+/*wordSearch() parses returned page data and finds input 'word'. Uses cheerio package*/
+function wordSearch($, word) {
 	if(word.trim().length < 1) {
 		return false;
 	}
@@ -226,6 +232,8 @@ function lambdaCrawler(res) {
     }
 }
 
+/*visitPage() visits each page in data structure, begins word search and performs 
+error handling and callback*/
 function visitPage(urlObj, res, callback){
 
 	console.log("Current page " + urlObj.URL);
@@ -254,7 +262,7 @@ function visitPage(urlObj, res, callback){
 		 	urlObj.visited = true;
 
 		 	var $ = cheerio.load(body.toLowerCase());
-			var isWordFound = searchForWord($, SEARCH_WORD);
+			var isWordFound = wordSearch($, SEARCH_WORD);
 
 			if(isWordFound) {
 				dataHolder.keywordFoundUrl = urlObj.URL;
@@ -271,6 +279,9 @@ function visitPage(urlObj, res, callback){
 		callback(res);
 	}
 }
+
+/*collectInternalLinks parses pages and returns links to outside sources in an effort 
+to prevent the crawler from only searching on internal path pages*/
 
 function collectInternalLinks($, currentUrl) {
 
