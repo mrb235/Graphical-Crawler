@@ -58,7 +58,14 @@ setChildren(graph, nodes, links);
 nodes.enter()
     .append("circle")
     .attr("class", "graph-node")
-    .attr("r", 5)
+    .attr("r", function(node) {
+        if(keywordFoundUrl.length > 1){
+            if(node.URL == keywordFoundUrl) {
+                return 8;
+            } 
+        }
+        return 5;
+    })
     .attr("cx", function(node) {return node.x;})
     .attr("cy", function(node) {return node.y;})
     .style("fill", function(node) { 
